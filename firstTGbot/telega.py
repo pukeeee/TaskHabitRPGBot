@@ -6,7 +6,7 @@ from random import choice
 bot = telebot.TeleBot("7887812213:AAHyBZtJJxAdKv0jUVQAMMBnKDsp-ce21OA")
 weatherAPI = "4774e7513b1687386a67f1cb5c5611a3"
 
-user_states = {}    #Хранилище состояний пользователя
+user_states = {}
 STATE_HOME = "home"
 STATE_WEATHER = "weather"
 STATE_PASSWORD = "password"
@@ -39,13 +39,11 @@ def help_func(message):
 def site_func(message):
     bot.send_message(message.chat.id, "<a href='https://www.youtube.com/watch?v=dQw4w9WgXcQ'>YouTube</a>", parse_mode='HTML', disable_web_page_preview=True)
 
-#Обработчик всех сообщений (кнопок)
 @bot.message_handler(func = lambda message: True)
 def handle_message(message):
     chat_id = message.chat.id
     text = message.text
     
-    #Проверка состояния юзера
     state = user_states.get(chat_id, STATE_HOME)
     if state == STATE_HOME:
         if text == "Weather":
@@ -88,7 +86,6 @@ def password_func(message):
         if 1 <= pswrdlength <= 99:
             user_states[message.chat.id] = {"state": STATE_PASSWORD_SPECIALS, "pswrdlength": pswrdlength}
             bot.send_message(message.chat.id, "Add special characters to the password? (yes/no)", reply_markup = specCharsCreateInLineKeyboard())
-            #bot.register_next_step_handler(message, handleSpecialCharacters)
         else:
             bot.send_message(message.chat.id, "Enter a valid number between 1 and 99:")
             bot.register_next_step_handler(message, password_func)
@@ -111,7 +108,6 @@ def pswrdgen(pswrdlength, specsign):
         chars += specchars
     return ''.join(choice(chars) for _ in range(pswrdlength))  
 
-# Обработчик нажатий на инлайн-кнопки
 @bot.callback_query_handler(func = lambda call: True)
 def button_click(call):
     chat_id = call.message.chat.id
@@ -131,7 +127,6 @@ def button_click(call):
         bot.send_message(call.message.chat.id, "Weather app. Enter city name:")
         bot.register_next_step_handler_by_chat_id(call.message.chat.id, weather_func)
 
-# Функция для создания инлайн-клавиатуры
 def passwordCreateInlineKeyboard():
     keyboard = types.InlineKeyboardMarkup()
     recreateButton = types.InlineKeyboardButton("Recreate", callback_data = "recreate")
@@ -154,21 +149,5 @@ def anotherCityCreateInLineKeyboard():
     keyboard.add(anotherCity)
     return keyboard
 
-
-
 if __name__ == "__main__":
     bot.infinity_polling()
-
-
-
-
-# @bot.message_handler()  #декоратор который срабатывает на введенный любой текст
-# def anyText(message):  #функция которая отправляет сообщение
-#     if message.text.lower() == "пидор":
-#         bot.reply_to(message, "А МОЖЕТ БЫТЬ ТЫ ПИДОР?")
-# @bot.message_handler(content_types=["document", "photo", "video"])
-# def anyFile(message):
-#     markup = types.InlineKeyboardMarkup()
-#     btn1 = types.InlineKeyboardButton("Check this", url="https://www.youtube.com/watch?v=OEFen30FAxo&ab_channel=%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9%D0%A7%D0%B5%D1%80%D0%BD%D0%B8%D0%BA%D0%BE%D0%B2")
-#     markup.row(btn1)
-#     bot.reply_to(message, "Oh no no no no no, u sent me shiiiit", reply_markup = markup)
