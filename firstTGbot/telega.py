@@ -3,7 +3,7 @@ import requests
 from telebot import types
 from random import choice
 
-bot = telebot.TeleBot("7887812213:AAHyBZtJJxAdKv0jUVQAMMBnKDsp-ce21OA")
+bot = telebot.TeleBot("token")
 weatherAPI = "4774e7513b1687386a67f1cb5c5611a3"
 
 user_states = {}
@@ -12,7 +12,6 @@ STATE_WEATHER = "weather"
 STATE_PASSWORD = "password"
 STATE_PASSWORD_SPECIALS = "password_specials"
 
-#MAIN HOME PAGE
 def home_page(chat_id):
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard = True)
     btn_weather = types.KeyboardButton("Weather")
@@ -85,7 +84,7 @@ def password_func(message):
         pswrdlength = int(message.text.strip())
         if 1 <= pswrdlength <= 99:
             user_states[message.chat.id] = {"state": STATE_PASSWORD_SPECIALS, "pswrdlength": pswrdlength}
-            bot.send_message(message.chat.id, "Add special characters to the password? (yes/no)", reply_markup = specCharsCreateInLineKeyboard())
+            bot.send_message(message.chat.id, "Add special characters to the password?", reply_markup = specCharsCreateInLineKeyboard())
         else:
             bot.send_message(message.chat.id, "Enter a valid number between 1 and 99:")
             bot.register_next_step_handler(message, password_func)
@@ -97,7 +96,8 @@ def handleSpecialCharacters(chat_id, specsign):
     if specsign in ["yes", "no"]:
         pswrdlength = user_states[chat_id]["pswrdlength"]
         password = pswrdgen(pswrdlength, specsign)
-        bot.send_message(chat_id, f"Your password: {password}", reply_markup = passwordCreateInlineKeyboard())
+        bot.send_message(chat_id, f"Your password:")
+        bot.send_message(chat_id, {password}, reply_markup = passwordCreateInlineKeyboard())
     else:
         bot.send_message(chat_id, "Invalid input. Please try again.")
 
@@ -113,10 +113,12 @@ def button_click(call):
     chat_id = call.message.chat.id
     if call.data == "recreate":
         bot.delete_message(chat_id = call.message.chat.id, message_id = call.message.message_id)
+        bot.delete_message(chat_id = call.message.chat.id, message_id = call.message.message_id - 1)
         bot.send_message(call.message.chat.id, "Enter the password length (1-99):")
         bot.register_next_step_handler_by_chat_id(call.message.chat.id, password_func)
     elif call.data == "delete":
         bot.delete_message(chat_id = call.message.chat.id, message_id = call.message.message_id)
+        bot.delete_message(chat_id = call.message.chat.id, message_id = call.message.message_id - 1)
     elif call.data == "yesAnswer":
         handleSpecialCharacters(chat_id, "yes")
         bot.delete_message(chat_id = call.message.chat.id, message_id = call.message.message_id)
