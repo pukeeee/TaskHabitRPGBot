@@ -4,7 +4,7 @@ from telebot import types
 from random import choice
 
 bot = telebot.TeleBot("token")
-weatherAPI = "4774e7513b1687386a67f1cb5c5611a3"
+weatherAPI = "token"
 
 user_states = {}
 STATE_HOME = "home"
@@ -18,7 +18,7 @@ def home_page(chat_id):
     btn_password = types.KeyboardButton("Password")
     btn_home = types.KeyboardButton("Home")
     keyboard.add(btn_weather, btn_home, btn_password)
-    bot.send_message(chat_id, "Choose option:", reply_markup = keyboard)
+    bot.send_message(chat_id, "Click button below", reply_markup = keyboard)
     user_states[chat_id] = STATE_HOME
 
 @bot.message_handler(commands=["start"])
