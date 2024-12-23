@@ -2,12 +2,9 @@ import yt_dlp
 import os
 
 def download_and_convert_video(url):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_path = os.path.join(script_dir, "downloads")
-    os.makedirs(output_path, exist_ok=True)
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best',
-        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
+        'outtmpl': os.path.join(os.path.dirname(__file__), '%(title)s.%(ext)s'),
         'merge_output_format': 'mp4',
         'postprocessors': [
             {
@@ -32,7 +29,7 @@ def download_and_convert_video(url):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(url, download=True)
             title = info_dict.get('title', 'video')
-            print(f"Video '{title}' successfully uploaded to the folder {output_path}!")
+            print(f"Video '{title}' successfully uploaded!")
     except Exception as e:
         print(f"Error: {e}")
 
