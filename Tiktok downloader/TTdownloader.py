@@ -8,7 +8,7 @@ def download_tiktok(url):
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
-        
+        print(f"Video successfully uploaded!")
 def main():
     url = input("Enter the Tiktok URL: ")
     download_tiktok(url)
