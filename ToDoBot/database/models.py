@@ -20,6 +20,7 @@ class Task(Base):
     id: Mapped[int] = mapped_column(primary_key = True)
     task: Mapped[str] = mapped_column(String(100))
     user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    status = mapped_column(String(50), default='pending')
 
 async def async_main():
     async with engine.begin() as conn:
