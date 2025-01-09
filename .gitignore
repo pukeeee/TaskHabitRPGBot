@@ -6,3 +6,4 @@ db.sqlite3
 TaskHabitRPGBot/database/models.py
 TaskHabitRPGBot/app/messages.py
 TaskHabitRPGBot/img
+.DS_Store

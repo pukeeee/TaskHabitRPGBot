@@ -2,18 +2,22 @@ import asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+from aiogram.fsm.storage.redis import RedisStorage
+from redis.asyncio import Redis 
 from app.middlewares import LanguageMiddleware
 from database.models import async_main
 from app.user import router
 from config import TOKEN
 
-"""поделючить redis"""
 
 async def main():
+    redis = Redis(host = "localhost", port = 6379, db = 0)
+    storage = RedisStorage(redis)
+    
     await async_main()
     bot = Bot(token = TOKEN, 
             default = DefaultBotProperties(parse_mode = ParseMode.HTML))
-    dp = Dispatcher()
+    dp = Dispatcher(storage = storage)
     dp.message.middleware(LanguageMiddleware())
     dp.callback_query.middleware(LanguageMiddleware())
     dp.include_router(router)

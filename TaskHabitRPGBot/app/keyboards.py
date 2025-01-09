@@ -2,7 +2,8 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                         InlineKeyboardMarkup, InlineKeyboardButton)
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from app.messages import Message
-from database.requests import getTask, getHabits
+from database.requests import getTask, getHabits, getTodayHabits
+from datetime import datetime
 
 async def startReplyKb(language_code: str):
     todoButton = "Task Tracker"
@@ -70,3 +71,52 @@ async def delHabits(tg_id):
     for habit in habits:
         keyboard.add(InlineKeyboardButton(text = habit.name, callback_data = f"delhabit_{habit.id}"))
     return keyboard.adjust(1).as_markup()
+
+async def selectWeekdaysKB(selected_days = None):
+    if selected_days is None:
+        selected_days = []
+    
+    days = [
+        ("Понедельник", "habitDays_mon"),
+        ("Вторник", "habitDays_tue"),
+        ("Среда", "habitDays_wed"),
+        ("Четверг", "habitDays_thu"),
+        ("Пятница", "habitDays_fri"),
+        ("Суббота", "habitDays_sat"),
+        ("Воскресенье", "habitDays_sun")
+    ]
+    
+    keyboard = InlineKeyboardBuilder()
+    for dayName, dayCode in days:
+        buttonText = f"✅ {dayName}" if dayCode.split("_")[1] in selected_days else dayName
+        keyboard.add(InlineKeyboardButton(text = buttonText, callback_data = dayCode))
+    keyboard.add(InlineKeyboardButton(text="Готово", callback_data="habitDays_done"))
+    keyboard.adjust(2)
+    return keyboard.as_markup()
+
+async def todayHabits(tg_id, language_code: str):
+    currentDay = datetime.today().weekday()
+    habits = await getTodayHabits(tg_id)
+    keyboard = InlineKeyboardBuilder()
+
+    today_habits = []
+    for habit in habits:
+        if len(habit.days_of_week) == 7 and habit.days_of_week[currentDay] == '1':
+            today_habits.append(habit)
+
+    if today_habits:
+        for habit in today_habits:
+            keyboard.add(InlineKeyboardButton(text=habit.name, callback_data=f"completedHabit_{habit.id}"))
+    else:
+        keyboard.add(InlineKeyboardButton(text="No habits for today", callback_data="no_today_habits"))
+    return keyboard.adjust(1).as_markup()
+
+#############
+"""profile"""
+#############
+
+async def resetCharacter():
+    pass
+
+async def leaderBoard():
+    pass

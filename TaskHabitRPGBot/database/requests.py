@@ -1,6 +1,6 @@
 from database.models import async_session
 from database.models import User, Task, Habit
-from sqlalchemy import select, update, delete, desc
+from sqlalchemy import select, update, delete, desc, and_
 import time
 
 async def setUser(tg_id):
@@ -70,8 +70,22 @@ async def getHabits(tg_id):
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
         habits = await session.scalars(select(Habit).where(Habit.user == user.id))
         return habits
+    
+async def getTodayHabits(tg_id):
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        habits = await session.scalars(select(Habit).where(and_(
+                                                                Habit.user == user.id,
+                                                                Habit.is_active == True)))
+        return habits
 
 async def deleteHabit(habitId):
     async with async_session() as session:
         await session.execute(delete(Habit).where(Habit.id == habitId))
+        await session.commit()
+        
+async def markHabitAsCompleted(habitId):
+    async with async_session() as session:
+        edit = update(Habit).where(Habit.id == habitId).values(is_active = False)
+        await session.execute(edit)
         await session.commit()

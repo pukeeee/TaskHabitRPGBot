@@ -5,7 +5,9 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from app.messages import Message
-from database.requests import setUser, deleteTask, addTask, getExp, addHabit, deleteHabit, getTaskById, editTaskInDB
+from database.requests import (setUser, deleteTask, addTask, getExp, 
+                                addHabit, deleteHabit, getTaskById, 
+                                editTaskInDB, markHabitAsCompleted)
 from app.fsm import UserState, HabitState, TaskState
 import app.keyboards as kb
 
@@ -65,7 +67,7 @@ async def main_process(message: Message, state: FSMContext, language_code: str):
         experience = await getExp(tg_id)
         userExperience = experience // 1000
         user_name = message.from_user.first_name
-        animation = FSInputFile("/Users/admin/Documents/Python/zlp/ToDoBot/img/giphy.gif")
+        animation = FSInputFile("/Users/admin/Documents/Python/zlp/TaskHabitRPGBot/img/giphy.gif")
         profile_message = Message.get_message(language_code, "profile").format(
                                                                                     user_name = user_name,
                                                                                     userExperience = userExperience,
@@ -145,8 +147,9 @@ async def habit_handler(message: Message, state: FSMContext, language_code: str)
         return
     elif message.text == "Info":
         await message.answer(Message.get_message(language_code, "habitInfo"), parse_mode=ParseMode.HTML)
-    elif message.text == "Info":
-        await message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML)
+    elif message.text == "Today habits":
+        await message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML, 
+                                                reply_markup = await kb.todayHabits(message.from_user.id, language_code))
 
 @router.callback_query(F.data.startswith("delhabit_"))
 async def delete_habit(callback: CallbackQuery, language_code: str):
@@ -170,19 +173,14 @@ async def handle_special_commands(message: Message, state: FSMContext, language_
 async def addHabit_handler(message: Message, state: FSMContext, language_code: str):
     if await handle_special_commands(message, state, language_code):
         return
-    
     await state.update_data(habit_text = message.text)
     await state.set_state(HabitState.choosingDays)
-    await message.answer("Enter days (1-7)")
+    await message.answer("Enter days (1-7)", reply_markup = await kb.selectWeekdaysKB())
 
 @router.message(HabitState.choosingDays)
 async def addHabitDays(message: Message, state: FSMContext, language_code: str):
     if await handle_special_commands(message, state, language_code):
         return
-    
-    await state.update_data(habit_days = message.text)
-    await state.set_state(HabitState.setExp)
-    await message.answer("Enter exp (10-100)")
 
 @router.message(HabitState.setExp)
 async def addHabitExp(message: Message, state: FSMContext, language_code: str):
@@ -199,6 +197,61 @@ async def addHabitExp(message: Message, state: FSMContext, language_code: str):
         return
     
     habit_data = await state.get_data()
-    await addHabit(message.from_user.id, habit_data.get("habit_text"), habit_data.get("habit_days"), habit_experience)
+    habit_text = habit_data.get("habit_text")
+    selected_days = habit_data.get("selected_days", [])
+    habit_days = daysToBinary(selected_days)
+    
+    await addHabit(message.from_user.id, habit_text, habit_days, habit_experience)
     await message.answer("Your habit has been successfully created!\nEnter new habit or press button to go back")
+    await state.clear()
     await state.set_state(HabitState.habitText) 
+
+def daysToBinary(selected_days):
+    days_position = {
+        'mon': 0,
+        'tue': 1,
+        'wed': 2,
+        'thu': 3,
+        'fri': 4,
+        'sat': 5,
+        'sun': 6
+    }
+    
+    binary_list = ['0'] * 7
+    for day in selected_days:
+        if day in days_position:
+            binary_list[days_position[day]] = '1'
+    return ''.join(binary_list)
+
+@router.callback_query(F.data.startswith("habitDays_"))
+async def daysSelection(callback: CallbackQuery, state: FSMContext, language_code: str):
+    data = callback.data
+    if data == "habitDays_done":
+        user_data = await state.get_data()
+        selected_days = user_data.get("selected_days", [])
+        await state.update_data(habit_days=selected_days)
+        await callback.message.answer("Дни недели сохранены.")
+        await state.set_state(HabitState.setExp)
+        await callback.message.answer("Enter exp (10-100)")
+    else:
+        day = data.replace("habitDays_", "")
+        user_data = await state.get_data()
+        selected_days = user_data.get("selected_days", [])
+        if day in selected_days:
+            selected_days.remove(day)
+        else:
+            selected_days.append(day)
+        await state.update_data(selected_days = selected_days)
+        await callback.message.edit_reply_markup(
+            reply_markup = await kb.selectWeekdaysKB(selected_days)
+        )
+    await callback.answer()
+    
+@router.callback_query(F.data.startswith("completedHabit_"))
+async def completeTodayHabit(callback: CallbackQuery, language_code: str):
+    habitId = callback.data.split("_")[1]
+    await markHabitAsCompleted(habitId)
+    await callback.answer("Привычка отмечена как выполненная ✅")
+    await callback.message.delete()
+    await callback.message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML, 
+                                                reply_markup = await kb.todayHabits(callback.from_user.id, language_code))
