@@ -1,8 +1,8 @@
 config.py
-/__pycache__
 __pycache__
 db.sqlite3
 .DS_Store
 /.DS_Store
-/messages.py
-/models.py
+ToDoBot/database/models.py
+ToDoBot/app/messages.py
+ToDoBot/img
