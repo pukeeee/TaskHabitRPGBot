@@ -1,26 +1,26 @@
-from aiogram import Router, F
+from aiogram import Router, F, types
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from aiogram.types.input_file import FSInputFile
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
+import random
+import os
 from app.messages import Message
-from database.requests import (setUser, deleteTask, addTask, getExp, 
+from database.requests import (setUser, deleteTask, addTask, getUserDB, 
                                 addHabit, deleteHabit, getTaskById, 
-                                editTaskInDB, markHabitAsCompleted)
-from app.fsm import UserState, HabitState, TaskState
+                                editTaskInDB, markHabitAsCompleted, changeNameDB,
+                                getProfileDB)
+from app.fsm import UserState, HabitState, TaskState, UserRPG
 import app.keyboards as kb
+from config import IMG_FOLDER
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
 
 router = Router()
 
-@router.message(CommandStart())
-async def startCommand(message: Message, language_code: str, state: FSMContext):
-    await setUser(message.from_user.id)
-    await state.set_state(UserState.startMenu)
-    await message.answer(Message.get_message(language_code, "start"), parse_mode=ParseMode.HTML, reply_markup = await kb.startReplyKb(language_code))
+
 
 @router.message(Command("donate"))
 async def donateComand(message: Message, command: CommandObject, language_code: str):
@@ -39,9 +39,13 @@ async def donateComand(message: Message, command: CommandObject, language_code: 
         currency="XTR"
     )
 
+
+
 @router.pre_checkout_query()
 async def pre_checkout_query(query: PreCheckoutQuery):
     await query.answer(ok=True)
+
+
 
 @router.message(F.successful_payment)
 async def on_successfull_payment(message: Message, language_code: str):
@@ -63,20 +67,26 @@ async def main_process(message: Message, state: FSMContext, language_code: str):
         await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, reply_markup = await kb.todoReplyKB(language_code))
         return
     elif message.text == "My profile":
-        tg_id = message.from_user.id
-        experience = await getExp(tg_id)
-        userExperience = experience // 1000
-        user_name = message.from_user.first_name
-        animation = FSInputFile("/Users/admin/Documents/Python/zlp/TaskHabitRPGBot/img/giphy.gif")
+        user = await getUserDB(message.from_user.id)
+        profile = await getProfileDB(message.from_user.id)
+        
+        user_name = profile.user_name
+        userExperience = user.experience // 1000
+        experience = user.experience
+        avatar_file = os.path.join(IMG_FOLDER, profile.race, profile.sex, profile.clas, profile.avatar)
+        photo = FSInputFile(avatar_file)
+        
         profile_message = Message.get_message(language_code, "profile").format(
                                                                                     user_name = user_name,
                                                                                     userExperience = userExperience,
                                                                                     experience = experience
                                                                                     )
-        await message.answer_animation(
-                                        animation = animation,
+        
+        await message.answer_photo(
+                                        photo = photo,
                                         caption = profile_message,
-                                        parse_mode = ParseMode.HTML
+                                        parse_mode = ParseMode.HTML,
+                                        reply_markup = await kb.profileInLineKB()
                                         )   
 
 ###########
@@ -104,12 +114,16 @@ async def todo_handler(message: Message, state: FSMContext, language_code: str):
         await message.answer(Message.get_message(language_code, "addTask"))
         await addTask(message.from_user.id, message.text)
 
+
+
 @router.callback_query(F.data.startswith("deltask_"))
 async def delete_task(callback: CallbackQuery, language_code: str):
     await callback.answer("Task completed successfully ✅")
     await deleteTask(callback.data.split("_")[1])
     await callback.message.delete()
     await callback.message.answer(Message.get_message(language_code, "deletTaskList"), reply_markup = await kb.delTasks(callback.from_user.id))
+
+
 
 @router.callback_query(F.data.startswith("edittask_"))
 async def edit_task(callback: CallbackQuery, language_code: str, state: FSMContext):
@@ -121,6 +135,8 @@ async def edit_task(callback: CallbackQuery, language_code: str, state: FSMConte
     await state.update_data(taskId = taskId)
     await callback.message.answer(f"Current text: {task}\n\nPlease enter new text for your task:")
 
+
+
 @router.message(TaskState.taskEdit)
 async def editTask(message: Message, state: FSMContext, language_code: str):
     newText = message.text
@@ -131,7 +147,7 @@ async def editTask(message: Message, state: FSMContext, language_code: str):
     await message.answer("Task updated successfully!", reply_markup = await kb.delTasks(message.from_user.id))
 
 ############
-"""habits"""
+"""Habits"""
 ############
 
 @router.message(UserState.habits)
@@ -151,12 +167,16 @@ async def habit_handler(message: Message, state: FSMContext, language_code: str)
         await message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML, 
                                                 reply_markup = await kb.todayHabits(message.from_user.id, language_code))
 
+
+
 @router.callback_query(F.data.startswith("delhabit_"))
 async def delete_habit(callback: CallbackQuery, language_code: str):
     await callback.answer("Habit deleted successfully ✅")
     await deleteHabit(callback.data.split("_")[1])
     await callback.message.delete()
     await callback.message.answer(Message.get_message(language_code, "deletTaskList"), reply_markup = await kb.delTasks(callback.from_user.id))
+
+
 
 async def handle_special_commands(message: Message, state: FSMContext, language_code: str):
     if message.text == "🏠 Home":
@@ -169,6 +189,8 @@ async def handle_special_commands(message: Message, state: FSMContext, language_
         return True
     return False
 
+
+
 @router.message(HabitState.habitText)
 async def addHabit_handler(message: Message, state: FSMContext, language_code: str):
     if await handle_special_commands(message, state, language_code):
@@ -177,10 +199,14 @@ async def addHabit_handler(message: Message, state: FSMContext, language_code: s
     await state.set_state(HabitState.choosingDays)
     await message.answer("Enter days (1-7)", reply_markup = await kb.selectWeekdaysKB())
 
+
+
 @router.message(HabitState.choosingDays)
 async def addHabitDays(message: Message, state: FSMContext, language_code: str):
     if await handle_special_commands(message, state, language_code):
         return
+
+
 
 @router.message(HabitState.setExp)
 async def addHabitExp(message: Message, state: FSMContext, language_code: str):
@@ -206,6 +232,8 @@ async def addHabitExp(message: Message, state: FSMContext, language_code: str):
     await state.clear()
     await state.set_state(HabitState.habitText) 
 
+
+
 def daysToBinary(selected_days):
     days_position = {
         'mon': 0,
@@ -222,6 +250,8 @@ def daysToBinary(selected_days):
         if day in days_position:
             binary_list[days_position[day]] = '1'
     return ''.join(binary_list)
+
+
 
 @router.callback_query(F.data.startswith("habitDays_"))
 async def daysSelection(callback: CallbackQuery, state: FSMContext, language_code: str):
@@ -246,7 +276,9 @@ async def daysSelection(callback: CallbackQuery, state: FSMContext, language_cod
             reply_markup = await kb.selectWeekdaysKB(selected_days)
         )
     await callback.answer()
-    
+
+
+
 @router.callback_query(F.data.startswith("completedHabit_"))
 async def completeTodayHabit(callback: CallbackQuery, language_code: str):
     habitId = callback.data.split("_")[1]
