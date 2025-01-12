@@ -150,8 +150,22 @@ async def deleteHabit(habitId):
 
 
 
-async def markHabitAsCompleted(habitId):
+async def markHabitAsCompleted(habitId, tg_id):
     async with async_session() as session:
-        edit = update(Habit).where(Habit.id == habitId).values(is_active = False)
-        await session.execute(edit)
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if not user:
+            raise ValueError(f"User with tg_id={tg_id} not found")
+        habit = await session.scalar(select(Habit).where(Habit.id == habitId))
+        if not habit:
+            raise ValueError(f"Habit with id={habitId} not found")
+        user.experience += habit.experience_points
+        habit.is_active = False
+        await session.commit()
+
+
+
+async def resetHabit():
+    async with async_session() as session:
+        reset = update(Habit).where(Habit.is_active == False).values(is_active = True)
+        await session.execute(reset)
         await session.commit()

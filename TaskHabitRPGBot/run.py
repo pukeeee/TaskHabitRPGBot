@@ -6,8 +6,10 @@ from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis 
 from app.middlewares import LanguageMiddleware
 from database.models import async_main
-from app.main import router
-from app.profile import rout
+from app.handlers.main import router
+from app.handlers.profile import profile
+from app.handlers.tasks import task
+from app.handlers.habits import habit
 from config import TOKEN
 
 async def main():
@@ -20,7 +22,9 @@ async def main():
     dp = Dispatcher(storage = storage)
     dp.message.middleware(LanguageMiddleware())
     dp.callback_query.middleware(LanguageMiddleware())
-    dp.include_router(rout)
+    dp.include_router(profile)
+    dp.include_router(habit)
+    dp.include_router(task)
     dp.include_router(router)
     await dp.start_polling(bot)
 

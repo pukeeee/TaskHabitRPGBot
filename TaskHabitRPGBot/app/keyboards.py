@@ -4,6 +4,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from app.messages import Message
 from aiogram.fsm.context import FSMContext
 from database.requests import getTask, getHabits, getTodayHabits
+import html
 from datetime import datetime
 from config import IMG_FOLDER
 import os
@@ -66,6 +67,8 @@ async def habitsReplyKB(language_code: str):
                                                     ],resize_keyboard = True)
     return replyKeyboard
 
+
+
 async def addHabitReplyKB(language_code: str):
     backToMain = "🏠 Home"
     backToHabit = "🔙 Habit"
@@ -85,25 +88,26 @@ async def delHabits(tg_id):
 
 
 
-async def selectWeekdaysKB(selected_days = None):
+async def selectWeekdaysKB(language_code: str, selected_days = None):
     if selected_days is None:
         selected_days = []
     
     days = [
-        ("Понедельник", "habitDays_mon"),
-        ("Вторник", "habitDays_tue"),
-        ("Среда", "habitDays_wed"),
-        ("Четверг", "habitDays_thu"),
-        ("Пятница", "habitDays_fri"),
-        ("Суббота", "habitDays_sat"),
-        ("Воскресенье", "habitDays_sun")
+        ("mon", "habitDays_mon"),
+        ("tue", "habitDays_tue"),
+        ("wed", "habitDays_wed"),
+        ("thu", "habitDays_thu"),
+        ("fri", "habitDays_fri"),
+        ("sat", "habitDays_sat"),
+        ("sun", "habitDays_sun")
     ]
     
     keyboard = InlineKeyboardBuilder()
     for dayName, dayCode in days:
-        buttonText = f"✅ {dayName}" if dayCode.split("_")[1] in selected_days else dayName
+        localizationDay = Message.get_message(language_code, dayName)
+        buttonText = f"✅ {localizationDay}" if dayCode.split("_")[1] in selected_days else localizationDay
         keyboard.add(InlineKeyboardButton(text = buttonText, callback_data = dayCode))
-    keyboard.add(InlineKeyboardButton(text="Готово", callback_data="habitDays_done"))
+    keyboard.add(InlineKeyboardButton(text = Message.get_message(language_code, "done"), callback_data="habitDays_done"))
     keyboard.adjust(2)
     return keyboard.as_markup()
 
@@ -137,12 +141,13 @@ async def regRase():
     for item in items:
         item_path =  os.path.join(IMG_FOLDER, item)
         if os.path.isdir(item_path):
+            normalized_name = html.escape(item.strip())
             keyboard.add(InlineKeyboardButton(
-                                            text=item,
+                                            text=normalized_name,
                                             callback_data=f"raseFolder_{item}"
                                         )
                                     )
-    keyboard.adjust(2)
+    keyboard.adjust(1)
     return keyboard.as_markup()
 
 
@@ -157,11 +162,12 @@ async def regSex(state):
     for item in items:
         item_path = os.path.join(race_path, item)
         if os.path.isdir(item_path):
+            normalized_name = html.escape(item.strip())
             keyboard.add(InlineKeyboardButton(
-                text=item,
+                text=normalized_name,
                 callback_data=f"sexFolder_{item}"
             ))
-    keyboard.adjust(2)
+    keyboard.adjust(1)
     return keyboard.as_markup()
 
 
@@ -177,11 +183,12 @@ async def regClass(state):
     for item in items:
         item_path = os.path.join(class_path, item)
         if os.path.isdir(item_path):
+            normalized_name = html.escape(item.strip())
             keyboard.add(InlineKeyboardButton(
-                text=item,
+                text=normalized_name,
                 callback_data=f"classFolder_{item}"
             ))
-    keyboard.adjust(2)
+    keyboard.adjust(1)
     return keyboard.as_markup()
 
 
