@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from app.middlewares import LanguageMiddleware
 from database.models import async_main
 from app.handlers.main import router
-from app.handlers.profile import profile
+from app.handlers.profiles import profile
 from app.handlers.tasks import task
 from app.handlers.habits import habit
 from config import TOKEN

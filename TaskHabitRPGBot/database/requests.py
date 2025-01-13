@@ -63,7 +63,19 @@ async def saveUserCharacter(tg_id: int, user_name: str, avatar: str, race: str, 
                     clas=clas
                 )
                 session.add(new_profile)
-            await session.commit()
+        await session.commit()
+
+
+
+async def getLeaderboard():
+    async with async_session() as session:
+        users = await session.execute(
+                                    select(Profile.user_name, User.experience)
+                                    .join(User, Profile.user == User.id)
+                                    .order_by(desc(User.experience))
+                                    .limit(10)
+                                )
+        return users.fetchall()
 
 ###########
 """Tasks"""
@@ -125,11 +137,32 @@ async def addHabit(tg_id, habit_text, habit_days, habit_experience):
 
 
 
+async def editHabit(habitId, new_habit_text, habit_days, new_habit_experience):
+    async with async_session() as session:
+        habit = await session.scalar(select(Habit).where(Habit.id == habitId))
+        if habit:
+            habit.name = new_habit_text
+            habit.days_of_week = habit_days
+            habit.experience_points = new_habit_experience
+            await session.commit()
+            return True
+        else:
+            return False
+
+
+
 async def getHabits(tg_id):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
         habits = await session.scalars(select(Habit).where(Habit.user == user.id))
         return habits
+
+
+
+async def getHabitById(habitId):
+    async with async_session() as session:
+        habit = await session.scalar(select(Habit.name).where(Habit.id == habitId))
+        return habit
 
 
 

@@ -67,6 +67,7 @@ async def reset_habits(message: Message):
 """Main page"""
 ###############
 
+
 @router.message(UserState.startMenu)
 async def main_process(message: Message, state: FSMContext, language_code: str):
     if message.text == "Habit Tracker":

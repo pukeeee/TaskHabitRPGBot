@@ -79,11 +79,37 @@ async def addHabitReplyKB(language_code: str):
 
 
 
-async def delHabits(tg_id):
+async def habitsList(tg_id):
     habits = await getHabits(tg_id)
     keyboard = InlineKeyboardBuilder()
+    
+    for habit in habits:
+        keyboard.row(InlineKeyboardButton(text = habit.name, callback_data = f"habit_{habit.id}"))
+    keyboard.row(InlineKeyboardButton(text = "〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️", callback_data = "q"))
+    keyboard.row(InlineKeyboardButton(text = "Edit ✏️", callback_data = "editHabits"),
+                InlineKeyboardButton(text = "Delete 🗑", callback_data = "deleteHabits"))
+    return keyboard.as_markup()
+
+
+
+async def deleteHabits(tg_id):
+    habits = await getHabits(tg_id)
+    keyboard = InlineKeyboardBuilder()
+    
     for habit in habits:
         keyboard.add(InlineKeyboardButton(text = habit.name, callback_data = f"delhabit_{habit.id}"))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToHabitsList"))
+    return keyboard.adjust(1).as_markup()
+
+
+
+async def editHabits(tg_id):
+    habits = await getHabits(tg_id)
+    keyboard = InlineKeyboardBuilder()
+    
+    for habit in habits:
+        keyboard.add(InlineKeyboardButton(text = habit.name, callback_data = f"edithabit_{habit.id}"))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToHabitsList"))
     return keyboard.adjust(1).as_markup()
 
 
@@ -107,7 +133,7 @@ async def selectWeekdaysKB(language_code: str, selected_days = None):
         localizationDay = Message.get_message(language_code, dayName)
         buttonText = f"✅ {localizationDay}" if dayCode.split("_")[1] in selected_days else localizationDay
         keyboard.add(InlineKeyboardButton(text = buttonText, callback_data = dayCode))
-    keyboard.add(InlineKeyboardButton(text = Message.get_message(language_code, "done"), callback_data="habitDays_done"))
+    keyboard.add(InlineKeyboardButton(text = Message.get_message(language_code, "done"), callback_data = "habitDays_done"))
     keyboard.adjust(2)
     return keyboard.as_markup()
 
@@ -125,9 +151,9 @@ async def todayHabits(tg_id, language_code: str):
 
     if today_habits:
         for habit in today_habits:
-            keyboard.add(InlineKeyboardButton(text=habit.name, callback_data=f"completedHabit_{habit.id}"))
+            keyboard.add(InlineKeyboardButton(text = habit.name, callback_data = f"completedHabit_{habit.id}"))
     else:
-        keyboard.add(InlineKeyboardButton(text="No habits for today", callback_data="no_today_habits"))
+        keyboard.add(InlineKeyboardButton(text = "No habits for today", callback_data = "no_today_habits"))
     return keyboard.adjust(1).as_markup()
 
 #############
@@ -142,9 +168,8 @@ async def regRase():
         item_path =  os.path.join(IMG_FOLDER, item)
         if os.path.isdir(item_path):
             normalized_name = html.escape(item.strip())
-            keyboard.add(InlineKeyboardButton(
-                                            text=normalized_name,
-                                            callback_data=f"raseFolder_{item}"
+            keyboard.add(InlineKeyboardButton(text = normalized_name,
+                                            callback_data = f"raseFolder_{item}"
                                         )
                                     )
     keyboard.adjust(1)
@@ -163,10 +188,10 @@ async def regSex(state):
         item_path = os.path.join(race_path, item)
         if os.path.isdir(item_path):
             normalized_name = html.escape(item.strip())
-            keyboard.add(InlineKeyboardButton(
-                text=normalized_name,
-                callback_data=f"sexFolder_{item}"
-            ))
+            keyboard.add(InlineKeyboardButton(text = normalized_name,
+                                                callback_data = f"sexFolder_{item}"
+                                            ))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToRace"))
     keyboard.adjust(1)
     return keyboard.as_markup()
 
@@ -185,28 +210,31 @@ async def regClass(state):
         if os.path.isdir(item_path):
             normalized_name = html.escape(item.strip())
             keyboard.add(InlineKeyboardButton(
-                text=normalized_name,
-                callback_data=f"classFolder_{item}"
+                text = normalized_name,
+                callback_data = f"classFolder_{item}"
             ))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToSex"))
     keyboard.adjust(1)
     return keyboard.as_markup()
 
 
 
 async def profileInLineKB():
-    leaderBoardButton = InlineKeyboardButton(text="Leaderboard", callback_data="leaderboard")
-    changeName = InlineKeyboardButton(text="Change Name", callback_data="changeName")
-    changeAvatar = InlineKeyboardButton(text="Change Character", callback_data="changeAvatar")
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[leaderBoardButton],
+    leaderBoardButton = InlineKeyboardButton(text = "Leaderboard", callback_data = "leaderboard")
+    changeName = InlineKeyboardButton(text = "Change Name", callback_data = "changeName")
+    changeAvatar = InlineKeyboardButton(text = "Change Character", callback_data = "changeAvatar")
+    keyboard = InlineKeyboardMarkup(inline_keyboard = [[leaderBoardButton],
                                                     [changeAvatar, changeName]])
     return keyboard
 
 
 
 async def avatarNavigationKB():
-    backButton = InlineKeyboardButton(text="⬅️ Назад", callback_data="prev_gif")
-    nextButton = InlineKeyboardButton(text="Вперед ➡️", callback_data="next_gif")
-    doneButton = InlineKeyboardButton(text="Готово", callback_data="done_gif")
+    backButton = InlineKeyboardButton(text = "⬅️ Назад", callback_data = "prev_img")
+    nextButton = InlineKeyboardButton(text = "Вперед ➡️", callback_data = "next_img")
+    doneButton = InlineKeyboardButton(text = "Готово", callback_data = "done_img")
+    back = InlineKeyboardButton(text = "🔙 Back", callback_data = "backToClass")
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[backButton, nextButton],
-                                                    [doneButton]])
+                                                    [doneButton],
+                                                    [back]])
     return keyboard

@@ -11,7 +11,9 @@ class HabitState(StatesGroup):
     habitText = State()
     choosingDays = State()
     setExp = State()
-
+    edithabitText = State()
+    editDays = State()
+    editExp = State()
 
 class TaskState(StatesGroup):
     taskEdit = State()

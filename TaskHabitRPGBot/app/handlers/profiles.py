@@ -8,7 +8,7 @@ import random
 import os
 from app.messages import Message
 from database.requests import (setUser, getUserDB,changeNameDB, 
-                                saveUserCharacter, getProfileDB)
+                                saveUserCharacter, getProfileDB, getLeaderboard)
 from app.fsm import UserState, UserRPG
 import app.keyboards as kb
 from config import IMG_FOLDER
@@ -39,7 +39,7 @@ async def startCommand(message: Message, language_code: str, state: FSMContext):
 async def setName_handler(message: Message, state: FSMContext, language_code: str):
     new_name = message.text.strip() 
     
-    if len(new_name) > 25:
+    if 3 > len(new_name) > 25:
         await message.answer(Message.get_message(language_code, "nameLength"))
         return
     await state.update_data(new_name = new_name)
@@ -56,7 +56,15 @@ async def setRace_handler(callback: types.CallbackQuery, state: FSMContext, lang
     await state.update_data(selected_race_folder = folder_name)
     await state.set_state(UserRPG.setSex)
     await callback.message.edit_text(text = Message.get_message(language_code, "sex"), parse_mode = ParseMode.HTML, 
-                                    reply_markup=await kb.regSex(state))
+                                    reply_markup = await kb.regSex(state))
+    await callback.answer()
+
+
+
+@profile.callback_query(F.data == "backToRace")
+async def backToRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
+    await state.set_state(UserRPG.setRace)
+    await callback.message.edit_text(Message.get_message(language_code, "race"), reply_markup = await kb.regRase())
     await callback.answer()
 
 
@@ -68,6 +76,15 @@ async def setSex_handler(callback: types.CallbackQuery, state: FSMContext, langu
     await state.update_data(selected_sex_folder = folder_name)
     await state.set_state(UserRPG.setClass)
     await callback.message.edit_text(text = Message.get_message(language_code, "class"), reply_markup = await kb.regClass(state))
+    await callback.answer()
+
+
+
+@profile.callback_query(F.data == "backToSex")
+async def backToRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
+    await state.set_state(UserRPG.setSex)
+    await callback.message.edit_text(text = Message.get_message(language_code, "sex"), parse_mode = ParseMode.HTML, 
+                                    reply_markup = await kb.regSex(state))
     await callback.answer()
 
 
@@ -89,6 +106,15 @@ async def setClass_handler(callback: types.CallbackQuery, state: FSMContext, lan
 
 
 
+@profile.callback_query(F.data == "backToClass")
+async def backToRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
+    await state.set_state(UserRPG.setClass)
+    await callback.message.delete()
+    await callback.message.answer(text = Message.get_message(language_code, "class"), reply_markup = await kb.regClass(state))
+    await callback.answer()
+
+
+
 def get_img_files(class_folder_path):
     return [f for f in os.listdir(class_folder_path) if f.endswith('.png')]
 
@@ -104,7 +130,7 @@ async def send_avatar(callback: CallbackQuery, img_files: list, current_index: i
 
 
 
-@profile.callback_query(F.data == "prev_gif")
+@profile.callback_query(F.data == "prev_img")
 async def prev_avatar(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     img_files = data.get('img_files', [])
@@ -118,7 +144,7 @@ async def prev_avatar(callback: CallbackQuery, state: FSMContext):
 
 
 
-@profile.callback_query(F.data == "next_gif")
+@profile.callback_query(F.data == "next_img")
 async def next_avatar(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     img_files = data.get('img_files', [])
@@ -132,7 +158,7 @@ async def next_avatar(callback: CallbackQuery, state: FSMContext):
 
 
 
-@profile.callback_query(F.data == "done_gif")
+@profile.callback_query(F.data == "done_img")
 async def done_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = await state.get_data()
     user_name = data.get('new_name', '')
@@ -149,7 +175,8 @@ async def done_avatar(callback: CallbackQuery, state: FSMContext, language_code:
         sex = sex,
         clas = clas
     )
-    await callback.message.edit_text(text = Message.get_message(language_code, "characterAdded"), parse_mode = ParseMode.HTML)
+    await callback.message.delete()
+    await callback.message.answer(text = Message.get_message(language_code, "characterAdded"), parse_mode = ParseMode.HTML)
     await callback.message.answer(Message.get_message(language_code, "start"), parse_mode = ParseMode.HTML, 
                                     reply_markup = await kb.startReplyKb(language_code))
     await state.clear()
@@ -168,7 +195,7 @@ async def changeName(callback: CallbackQuery, state: FSMContext, language_code: 
 @profile.message(UserRPG.changeName)
 async def changeName(message: Message, state: FSMContext, language_code: str):
     new_name = message.text.strip() 
-    if len(new_name) > 25:
+    if 3 > len(new_name) > 25:
         await message.answer(Message.get_message(language_code, "nameLength"))
         return
     await message.answer(Message.get_message(language_code, "nameChanged"))
@@ -184,3 +211,19 @@ async def changeAvatar_handler(callback: CallbackQuery, state: FSMContext, langu
     await state.update_data(new_name = profile.user_name)
     await state.set_state(UserRPG.setRace)
     await callback.message.answer(Message.get_message(language_code, "changeAvatar"), reply_markup = await kb.regRase())
+
+
+
+@profile.callback_query(F.data == "leaderboard")
+async def leaderboardMessage(callback: CallbackQuery, state: FSMContext, language_code: str):
+    leaderboard = await generateLeaderboard()
+    await callback.message.answer(leaderboard, parse_mode=ParseMode.HTML)
+
+
+
+async def generateLeaderboard():
+    leaderboard = await getLeaderboard()
+    message = "<b>🏆 Leaderboard 🏆</b>\n\n"
+    for index, (user_name, experience) in enumerate(leaderboard, start=1):
+        message += f"{index}. {user_name}: {experience} XP\n"
+    return message
