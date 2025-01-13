@@ -10,7 +10,7 @@ from app.messages import Message
 from database.requests import (setUser, deleteTask, addTask, getUserDB, 
                                 addHabit, deleteHabit, getTaskById, 
                                 editTaskInDB, markHabitAsCompleted, changeNameDB,
-                                getProfileDB, resetHabit)
+                                getProfileDB, resetHabit, getTask)
 from app.fsm import UserState, HabitState, TaskState, UserRPG
 import app.keyboards as kb
 
@@ -18,36 +18,83 @@ task = Router()
 
 @task.message(UserState.todo)
 async def todo_handler(message: Message, state: FSMContext, language_code: str):
-    if message.text == "My tasks":
-        await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await kb.delTasks(message.from_user.id))
-    elif message.text == "🏠 Home":
+    if message.text == Message.get_message(language_code, "taskListButton"):
+        taskListMessage = await getTaskListMessage(language_code, message.from_user.id)
+        await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
+        
+    elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
-        return
-    elif message.text == "Info":
+        
+    elif message.text == Message.get_message(language_code, "infoButton"):
         await message.answer(Message.get_message(language_code, "taskTrackerInfo"))
-    elif message.text == "Edit task":
-        await message.answer(Message.get_message(language_code, "editTask"), reply_markup = await kb.editTasks(message.from_user.id))
+        
+    elif message.text == Message.get_message(language_code, "addTaskButton"):
+        await state.set_state(TaskState.addTask)
+        await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
+                            reply_markup = await kb.addTaskReplyKB(language_code))
+        
+    elif message.text == Message.get_message(language_code, "doneTasksButton"):
+        await message.answer("Not available now")
+
+
+
+async def getTaskListMessage(language_code: str, tg_id):
+    taskList = list(await getTask(tg_id))
+    message = Message.get_message(language_code, "taskslist")
+    if not taskList:
+        message += "🚽\n"
+    else:
+        for task in taskList:
+            message += f"▫️  {task.task}\n"
+    message += Message.get_message(language_code, "taskListMessage")
+    return message
+
+
+
+@task.callback_query(F.data == "editTasks")
+async def editTaskList(callback: CallbackQuery, state: FSMContext, language_code: str):
+    await callback.message.edit_text(text = Message.get_message(language_code, "editTask"), reply_markup = await kb.editTasks(callback.from_user.id))
+
+
+
+@task.callback_query(F.data == "deleteTasks")
+async def deleteTaskList(callback: CallbackQuery, state: FSMContext, language_code: str):
+    await callback.message.edit_text(text = Message.get_message(language_code, "deleteTask"), reply_markup = await kb.delTasks(callback.from_user.id))
+
+
+
+
+@task.message(TaskState.addTask)
+async def addTask_handler(message: Message, state: FSMContext, language_code: str):
+    if message.text == Message.get_message(language_code, "homeButton"):
+        await state.set_state(UserState.startMenu)
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+
+    elif message.text == Message.get_message(language_code, "backToTaskButton"):
+        await state.set_state(UserState.todo)
+        await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, 
+                            reply_markup = await kb.todoReplyKB(language_code))
+    
+    elif message.text.startswith("/"):
         return
-    if message.text.startswith("/"):
-        return
-    if message.text != "My tasks" and message.text != "🏠 Home" and message.text != "Info" and message.text != "Edit task":
+    
+    else:
         await message.answer(Message.get_message(language_code, "addTask"))
         await addTask(message.from_user.id, message.text)
-
 
 
 @task.callback_query(F.data.startswith("deltask_"))
 async def delete_task(callback: CallbackQuery, language_code: str):
     await callback.answer(Message.get_message(language_code, "deletTaskList"))
     await deleteTask(callback.data.split("_")[1])
-    await callback.message.edit_text(text = Message.get_message(language_code, "taskslist"), reply_markup = await kb.delTasks(callback.from_user.id))
+    await callback.message.edit_text(text = Message.get_message(language_code, "deleteTask"), reply_markup = await kb.delTasks(callback.from_user.id))
 
 
 
 @task.callback_query(F.data.startswith("edittask_"))
 async def edit_task(callback: CallbackQuery, language_code: str, state: FSMContext):
-    await callback.answer("The task to be edited is selected ✅")
+    await callback.answer("✅")
     taskId = callback.data.split("_")[1]
     task = await getTaskById(taskId)
     await state.set_state(TaskState.taskEdit)
@@ -57,22 +104,22 @@ async def edit_task(callback: CallbackQuery, language_code: str, state: FSMConte
 
 
 async def todo_exception(message, state, language_code):
-    if message.text == "My tasks":
+    if message.text == Message.get_message(language_code, "taskListButton"):
         await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await kb.delTasks(message.from_user.id))
         await state.set_state(UserState.todo)
         return True
-    elif message.text == "🏠 Home":
+    elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
         await state.set_state(UserState.todo)
         return True
-    elif message.text == "Info":
-        await message.answer(Message.get_message(language_code, "taskTrackerInfo"))
-        await state.set_state(UserState.todo)
+    elif message.text == Message.get_message(language_code, "addTaskButton"):
+        await state.set_state(TaskState.addTask)
+        await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
+                            reply_markup = await kb.addTaskReplyKB(language_code))
         return True
-    elif message.text == "Edit task":
-        await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await kb.editTasks(message.from_user.id))
-        await state.set_state(UserState.todo)
+    elif message.text == Message.get_message(language_code, "doneTasksButton"):
+        await message.answer("Not available now")
         return True
     return False
 
@@ -87,7 +134,9 @@ async def editTask(message: Message, state: FSMContext, language_code: str):
     taskId = data['taskId']
     await editTaskInDB(taskId, newText)
     await state.set_state(UserState.todo)
-    await message.answer("Task updated successfully!✅")
-    await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await kb.editTasks(message.from_user.id))
+    await message.answer("✅")
+    
+    taskListMessage = await getTaskListMessage(language_code, message.from_user.id)
+    await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
 
 

@@ -17,6 +17,7 @@ class HabitState(StatesGroup):
 
 class TaskState(StatesGroup):
     taskEdit = State()
+    addTask = State()
 
 
 class UserRPG(StatesGroup):

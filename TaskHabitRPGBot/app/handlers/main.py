@@ -63,6 +63,11 @@ async def reset_habits(message: Message):
         await message.answer("No no no no buddy\nWrong way") 
 
 
+
+@router.message(Command("info"))
+async def info_message(message: Message, state: FSMContext):
+    pass
+
 ###############
 """Main page"""
 ###############
@@ -70,16 +75,17 @@ async def reset_habits(message: Message):
 
 @router.message(UserState.startMenu)
 async def main_process(message: Message, state: FSMContext, language_code: str):
-    if message.text == "Habit Tracker":
+    if message.text == Message.get_message(language_code, "habitTrackerButton"):
         await state.set_state(UserState.habits)
-        await message.answer(Message.get_message(language_code, "habitStart"), parse_mode=ParseMode.HTML, reply_markup = await kb.habitsReplyKB(language_code))
-        return
-    elif message.text == "Task Tracker":
+        await message.answer(Message.get_message(language_code, "habitStart"), parse_mode=ParseMode.HTML, 
+                            reply_markup = await kb.habitsReplyKB(language_code))
+
+    elif message.text == Message.get_message(language_code, "taskTrackerButton"):
         await state.set_state(UserState.todo)
-        await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, reply_markup = await kb.todoReplyKB(language_code))
-        await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML)
-        return
-    elif message.text == "My profile":
+        await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, 
+                            reply_markup = await kb.todoReplyKB(language_code))
+
+    elif message.text == Message.get_message(language_code, "profileButton"):
         user = await getUserDB(message.from_user.id)
         profile = await getProfileDB(message.from_user.id)
         
