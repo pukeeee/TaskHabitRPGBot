@@ -29,6 +29,7 @@ async def startCommand(message: Message, language_code: str, state: FSMContext):
             reply_markup = await kb.startReplyKb(language_code)
         )
         await state.set_state(UserState.startMenu)
+        
     else:
         await state.set_state(UserRPG.setName)
         await message.answer(Message.get_message(language_code, "newCharacter"), parse_mode = ParseMode.HTML)
@@ -101,7 +102,7 @@ async def setClass_handler(callback: types.CallbackQuery, state: FSMContext, lan
 
     current_index = random.randint(0, len(img_files) - 1)
     await state.update_data(img_files = img_files, current_index = current_index, class_folder_path = class_folder_path)
-    await send_avatar(callback, img_files, current_index, class_folder_path, state)
+    await send_avatar(callback, img_files, current_index, class_folder_path, state, language_code)
     await callback.answer()
 
 
@@ -121,17 +122,17 @@ def get_img_files(class_folder_path):
 
 
 async def send_avatar(callback: CallbackQuery, img_files: list, current_index: int,
-                        class_folder_path: str, state: FSMContext):
+                        class_folder_path: str, state: FSMContext, language_code: str):
     photo_path = os.path.join(class_folder_path, img_files[current_index])
     photo = FSInputFile(photo_path)
     media = types.InputMediaPhoto(media = photo, caption = f"👾 {current_index + 1} / {len(img_files)}")
-    await callback.message.edit_media(media = media, reply_markup = await kb.avatarNavigationKB())
+    await callback.message.edit_media(media = media, reply_markup = await kb.avatarNavigationKB(language_code))
     await state.update_data(selected_img = img_files[current_index])
 
 
 
 @profile.callback_query(F.data == "prev_img")
-async def prev_avatar(callback: CallbackQuery, state: FSMContext):
+async def prev_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = await state.get_data()
     img_files = data.get('img_files', [])
     current_index = data.get('current_index', 0)
@@ -139,13 +140,13 @@ async def prev_avatar(callback: CallbackQuery, state: FSMContext):
 
     current_index = (current_index - 1) % len(img_files)
     await state.update_data(current_index = current_index)
-    await send_avatar(callback, img_files, current_index, class_folder_path, state)
+    await send_avatar(callback, img_files, current_index, class_folder_path, state, language_code)
     await callback.answer()
 
 
 
 @profile.callback_query(F.data == "next_img")
-async def next_avatar(callback: CallbackQuery, state: FSMContext):
+async def next_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = await state.get_data()
     img_files = data.get('img_files', [])
     current_index = data.get('current_index', 0)
@@ -153,7 +154,7 @@ async def next_avatar(callback: CallbackQuery, state: FSMContext):
 
     current_index = (current_index + 1) % len(img_files)
     await state.update_data(current_index = current_index)
-    await send_avatar(callback, img_files, current_index, class_folder_path, state)
+    await send_avatar(callback, img_files, current_index, class_folder_path, state, language_code)
     await callback.answer()
 
 

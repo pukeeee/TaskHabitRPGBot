@@ -59,14 +59,23 @@ async def reset_habits(message: Message):
     if message.from_user.id == 514373294:
         await resetHabit()
         await message.answer("✅ Привычки успешно сброшены!")
+        
     else:
         await message.answer("No no no no buddy\nWrong way") 
 
 
 
 @router.message(Command("info"))
-async def info_message(message: Message, state: FSMContext):
-    pass
+async def info_message(message: Message, state: FSMContext, language_code: str):
+    current_state = await state.get_state()
+
+    if current_state == UserState.todo.state:
+        await message.answer(Message.get_message(language_code, "taskTrackerInfo"))
+    elif current_state == UserState.startMenu.state:
+        await message.answer(Message.get_message(language_code, "homeInfo"))
+    elif current_state == UserState.habits.state:
+        await message.answer(Message.get_message(language_code, "habitTrackerInfo"))
+
 
 ###############
 """Main page"""
@@ -77,12 +86,12 @@ async def info_message(message: Message, state: FSMContext):
 async def main_process(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "habitTrackerButton"):
         await state.set_state(UserState.habits)
-        await message.answer(Message.get_message(language_code, "habitStart"), parse_mode=ParseMode.HTML, 
+        await message.answer(Message.get_message(language_code, "habitStart"), 
                             reply_markup = await kb.habitsReplyKB(language_code))
 
     elif message.text == Message.get_message(language_code, "taskTrackerButton"):
         await state.set_state(UserState.todo)
-        await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, 
+        await message.answer(Message.get_message(language_code, "todoStart"), 
                             reply_markup = await kb.todoReplyKB(language_code))
 
     elif message.text == Message.get_message(language_code, "profileButton"):
@@ -95,15 +104,11 @@ async def main_process(message: Message, state: FSMContext, language_code: str):
         avatar_file = os.path.join(IMG_FOLDER, profile.race, profile.sex, profile.clas, profile.avatar)
         photo = FSInputFile(avatar_file)
         
-        profile_message = Message.get_message(language_code, "profile").format(
-                                                                                user_name = user_name,
+        profile_message = Message.get_message(language_code, "profile").format(user_name = user_name,
                                                                                 userExperience = userExperience,
-                                                                                experience = experience
-                                                                                )
+                                                                                experience = experience)
         
-        await message.answer_photo(
-                                    photo = photo,
+        await message.answer_photo(photo = photo,
                                     caption = profile_message,
                                     parse_mode = ParseMode.HTML,
-                                    reply_markup = await kb.profileInLineKB()
-                                    )
+                                    reply_markup = await kb.profileInLineKB(language_code))

@@ -84,20 +84,20 @@ async def regClass(state):
 
 
 
-async def profileInLineKB():
-    leaderBoardButton = InlineKeyboardButton(text = "Leaderboard", callback_data = "leaderboard")
-    changeName = InlineKeyboardButton(text = "Change Name", callback_data = "changeName")
-    changeAvatar = InlineKeyboardButton(text = "Change Character", callback_data = "changeAvatar")
+async def profileInLineKB(language_code: str):
+    leaderBoardButton = InlineKeyboardButton(text = Message.get_message(language_code, "leaderboardButton"), callback_data = "leaderboard")
+    changeName = InlineKeyboardButton(text = Message.get_message(language_code, "changeNameButton"), callback_data = "changeName")
+    changeAvatar = InlineKeyboardButton(text = Message.get_message(language_code, "changeCharacterButton"), callback_data = "changeAvatar")
     keyboard = InlineKeyboardMarkup(inline_keyboard = [[leaderBoardButton],
                                                     [changeAvatar, changeName]])
     return keyboard
 
 
 
-async def avatarNavigationKB():
-    backButton = InlineKeyboardButton(text = "⬅️ Назад", callback_data = "prev_img")
-    nextButton = InlineKeyboardButton(text = "Вперед ➡️", callback_data = "next_img")
-    doneButton = InlineKeyboardButton(text = "Готово", callback_data = "done_img")
+async def avatarNavigationKB(language_code: str):
+    backButton = InlineKeyboardButton(text = "⬅️", callback_data = "prev_img")
+    nextButton = InlineKeyboardButton(text = "➡️", callback_data = "next_img")
+    doneButton = InlineKeyboardButton(text = Message.get_message(language_code, "done"), callback_data = "done_img")
     back = InlineKeyboardButton(text = "🔙 Back", callback_data = "backToClass")
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[backButton, nextButton],
                                                     [doneButton],
@@ -114,6 +114,7 @@ async def delTasks(tg_id):
     keyboard = InlineKeyboardBuilder()
     for task in tasks:
         keyboard.add(InlineKeyboardButton(text = task.task, callback_data = f"deltask_{task.id}"))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToTaskList" ))
     return keyboard.adjust(1).as_markup()
 
 
@@ -123,6 +124,7 @@ async def editTasks(tg_id):
     keyboard = InlineKeyboardBuilder()
     for task in tasks:
         keyboard.add(InlineKeyboardButton(text = task.task, callback_data = f"edittask_{task.id}"))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToTaskList" ))
     return keyboard.adjust(1).as_markup()
 
 
@@ -139,12 +141,12 @@ async def taskListKB(language_code: str):
 async def todoReplyKB(language_code: str):
     taskListButton = Message.get_message(language_code, "taskListButton")
     backToMain = Message.get_message(language_code, "homeButton")
-    info = Message.get_message(language_code, "infoButton")
+    statistic = "Statistic"
     addTaskButton = Message.get_message(language_code, "addTaskButton")
     doneTasksButton = Message.get_message(language_code, "doneTasksButton")
     replyKeyboard = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(text = addTaskButton)],
                                                     [KeyboardButton(text = doneTasksButton), KeyboardButton(text = taskListButton)], 
-                                                    [KeyboardButton(text = info), KeyboardButton(text = backToMain)]],
+                                                    [KeyboardButton(text = statistic), KeyboardButton(text = backToMain)]],
                                                     resize_keyboard = True)
     return replyKeyboard
 
@@ -169,10 +171,10 @@ async def habitsReplyKB(language_code: str):
     todayHabits = Message.get_message(language_code, "todayHabitsButton")
     backToMain = Message.get_message(language_code, "homeButton")
     addHabit = Message.get_message(language_code, "addHabitButton")
-    info = "Info"
+    statistic = "Statistic"
     replyKeyboard = ReplyKeyboardMarkup(keyboard = [[KeyboardButton(text = addHabit)],
                                                     [KeyboardButton(text = habitListButton), KeyboardButton(text = todayHabits)],
-                                                    [KeyboardButton(text = info) ,KeyboardButton(text = backToMain)]
+                                                    [KeyboardButton(text = statistic) ,KeyboardButton(text = backToMain)]
                                                     ],resize_keyboard = True)
     return replyKeyboard
 
@@ -256,7 +258,8 @@ async def todayHabits(tg_id, language_code: str):
 
     if today_habits:
         for habit in today_habits:
-            keyboard.add(InlineKeyboardButton(text = habit.name, callback_data = f"completedHabit_{habit.id}"))
+            button_text = f"{habit.name}  |  +{habit.experience_points} ✨"
+            keyboard.add(InlineKeyboardButton(text = button_text, callback_data = f"completedHabit_{habit.id}_{habit.experience_points}"))
     else:
         keyboard.add(InlineKeyboardButton(text = "No habits for today", callback_data = "no_today_habits"))
     return keyboard.adjust(1).as_markup()

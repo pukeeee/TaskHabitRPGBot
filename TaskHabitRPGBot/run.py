@@ -22,10 +22,11 @@ async def main():
     dp = Dispatcher(storage = storage)
     dp.message.middleware(LanguageMiddleware())
     dp.callback_query.middleware(LanguageMiddleware())
+    dp.include_router(router)
     dp.include_router(profile)
     dp.include_router(habit)
     dp.include_router(task)
-    dp.include_router(router)
+
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

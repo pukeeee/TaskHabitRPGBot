@@ -16,18 +16,18 @@ import app.keyboards as kb
 
 task = Router()
 
+
 @task.message(UserState.todo)
 async def todo_handler(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "taskListButton"):
-        taskListMessage = await getTaskListMessage(language_code, message.from_user.id)
-        await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
+        await taskList(message, language_code)
         
     elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
         
-    elif message.text == Message.get_message(language_code, "infoButton"):
-        await message.answer(Message.get_message(language_code, "taskTrackerInfo"))
+    elif message.text == "Statistic":
+        await message.answer("Not available now")
         
     elif message.text == Message.get_message(language_code, "addTaskButton"):
         await state.set_state(TaskState.addTask)
@@ -36,6 +36,12 @@ async def todo_handler(message: Message, state: FSMContext, language_code: str):
         
     elif message.text == Message.get_message(language_code, "doneTasksButton"):
         await message.answer("Not available now")
+
+
+
+async def taskList(message: Message, language_code: str):
+    taskListMessage = await getTaskListMessage(language_code, message.from_user.id)
+    await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
 
 
 
@@ -103,24 +109,34 @@ async def edit_task(callback: CallbackQuery, language_code: str, state: FSMConte
 
 
 
+@task.callback_query(F.data == "backToTaskList")
+async def backToTaskList_handler(callback: CallbackQuery, language_code: str):
+    taskListMessage = await getTaskListMessage(language_code, callback.from_user.id)
+    await callback.message.edit_text(text = taskListMessage, reply_markup = await kb.taskListKB(language_code))
+
+
 async def todo_exception(message, state, language_code):
     if message.text == Message.get_message(language_code, "taskListButton"):
         await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await kb.delTasks(message.from_user.id))
         await state.set_state(UserState.todo)
         return True
+    
     elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
         await state.set_state(UserState.todo)
         return True
+    
     elif message.text == Message.get_message(language_code, "addTaskButton"):
         await state.set_state(TaskState.addTask)
         await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
                             reply_markup = await kb.addTaskReplyKB(language_code))
         return True
+    
     elif message.text == Message.get_message(language_code, "doneTasksButton"):
         await message.answer("Not available now")
         return True
+    
     return False
 
 
