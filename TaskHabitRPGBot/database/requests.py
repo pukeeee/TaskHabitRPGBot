@@ -1,5 +1,5 @@
 from database.models import async_session
-from database.models import User, Task, Habit, Profile
+from database.models import User, Task, Habit, Profile, Statistic
 from sqlalchemy import select, update, delete, desc, and_
 import time
 
@@ -11,7 +11,8 @@ async def setUser(tg_id):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
         if not user:
-            session.add(User(tg_id = tg_id))
+            unix_time = int(time.time())
+            session.add(User(tg_id = tg_id, start_date = unix_time))
             await session.commit()
         return user
 
@@ -82,10 +83,20 @@ async def getLeaderboard():
 """Tasks"""
 ###########
 
-async def getTask(tg_id):
+async def getUncompletedTask(tg_id):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
-        tasks = await session.scalars(select(Task).where(Task.user == user.id))
+        tasks = await session.scalars(select(Task).where(and_(Task.user == user.id,
+                                                            Task.status == False)))
+        return tasks
+    
+    
+    
+async def getCompletedTask(tg_id):
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        tasks = await session.scalars(select(Task).where(and_(Task.user == user.id,Task.status == True)
+                                                        ).order_by(Task.done_date.desc()))
         return tasks
 
 
@@ -117,6 +128,42 @@ async def getTaskById(taskId):
     async with async_session() as session:
         task = await session.scalar(select(Task.task).where(Task.id == taskId))
         return task
+
+
+
+async def markTaskAsCompleted(taskId, tg_id):
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        task = await session.scalar(select(Task).where(Task.id == taskId))
+        
+        unix_time = int(time.time())
+        user.all_tasks_count += 1
+        task.status = True
+        task.done_date = unix_time
+        
+        today_unix = int(time.mktime(time.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")))
+        
+        statistic = await session.scalar(
+            select(Statistic).where(
+                Statistic.user_id == user.id,
+                Statistic.date == today_unix
+            )
+        )
+        
+        if statistic:
+            statistic.tasks_count += 1
+        else:
+            new_statistic = Statistic(
+                user_id = user.id,
+                date = today_unix,
+                tasks_count = 1
+            )
+            session.add(new_statistic)
+
+        await session.commit()
+
+
+
 
 ############
 """Habits"""
@@ -170,8 +217,7 @@ async def getHabitById(habitId):
 async def getTodayHabits(tg_id):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
-        habits = await session.scalars(select(Habit).where(and_(
-                                                                Habit.user == user.id,
+        habits = await session.scalars(select(Habit).where(and_(Habit.user == user.id,
                                                                 Habit.status == False)))
         return habits
 

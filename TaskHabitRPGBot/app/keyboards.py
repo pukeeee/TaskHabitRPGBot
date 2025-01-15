@@ -3,7 +3,7 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from app.messages import Message
 from aiogram.fsm.context import FSMContext
-from database.requests import getTask, getHabits, getTodayHabits
+from database.requests import getUncompletedTask, getHabits, getTodayHabits
 import html
 from datetime import datetime
 from config import IMG_FOLDER
@@ -110,7 +110,7 @@ async def avatarNavigationKB(language_code: str):
 ###########
 
 async def delTasks(tg_id):
-    tasks = await getTask(tg_id)
+    tasks = await getUncompletedTask(tg_id)
     keyboard = InlineKeyboardBuilder()
     for task in tasks:
         keyboard.add(InlineKeyboardButton(text = task.task, callback_data = f"deltask_{task.id}"))
@@ -120,7 +120,7 @@ async def delTasks(tg_id):
 
 
 async def editTasks(tg_id):
-    tasks = await getTask(tg_id)
+    tasks = await getUncompletedTask(tg_id)
     keyboard = InlineKeyboardBuilder()
     for task in tasks:
         keyboard.add(InlineKeyboardButton(text = task.task, callback_data = f"edittask_{task.id}"))
@@ -129,11 +129,23 @@ async def editTasks(tg_id):
 
 
 
+async def completeTasks(tg_id):
+    tasks = await getUncompletedTask(tg_id)
+    keyboard = InlineKeyboardBuilder()
+    for task in tasks:
+        keyboard.add(InlineKeyboardButton(text = task.task, callback_data = f"completetask_{task.id}"))
+    keyboard.add(InlineKeyboardButton(text = "🔙 Back", callback_data = "backToTaskList" ))
+    return keyboard.adjust(1).as_markup()
+
+
+
 async def taskListKB(language_code: str):
     editButton = InlineKeyboardButton(text = Message.get_message(language_code, "editTaskButton"), callback_data = "editTasks")
     deleteButton = InlineKeyboardButton(text = Message.get_message(language_code, "deleteTaskButton"), callback_data = "deleteTasks")
+    completeButton = InlineKeyboardButton(text = "Mark as completed", callback_data = "completeTasks")
     
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[editButton, deleteButton]])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[deleteButton, editButton],
+                                                    [completeButton]])
     return keyboard
 
 
