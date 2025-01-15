@@ -1,9 +1,9 @@
 config.py
 __pycache__
 db.sqlite3
-.DS_Store
 /.DS_Store
 TaskHabitRPGBot/database/models.py
 TaskHabitRPGBot/app/messages.py
-TaskHabitRPGBot/img
+img
 .DS_Store
+validators.py

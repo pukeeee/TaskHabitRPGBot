@@ -10,6 +10,7 @@ from app.messages import Message
 from database.requests import (setUser, getUserDB,changeNameDB, 
                                 saveUserCharacter, getProfileDB, getLeaderboard)
 from app.fsm import UserState, UserRPG
+from validators import emoji_specSign, letters, compiled_patterns
 import app.keyboards as kb
 from config import IMG_FOLDER
 
@@ -17,36 +18,17 @@ profile = Router()
 
 
 
-@profile.message(CommandStart())
-async def startCommand(message: Message, language_code: str, state: FSMContext):
-    await setUser(message.from_user.id)
-    profile = await getProfileDB(message.from_user.id)
-
-    if profile:
-        await message.answer(
-            Message.get_message(language_code, "start"),
-            parse_mode = ParseMode.HTML,
-            reply_markup = await kb.startReplyKb(language_code)
-        )
-        await state.set_state(UserState.startMenu)
-        
-    else:
-        await state.set_state(UserRPG.setName)
-        await message.answer(Message.get_message(language_code, "newCharacter"), parse_mode = ParseMode.HTML)
-
-
-
 @profile.message(UserRPG.setName)
 async def setName_handler(message: Message, state: FSMContext, language_code: str):
     new_name = message.text.strip() 
-    
-    if 3 > len(new_name) > 25:
-        await message.answer(Message.get_message(language_code, "nameLength"))
-        return
-    await state.update_data(new_name = new_name)
-
-    await state.set_state(UserRPG.setRace)
-    await message.answer(Message.get_message(language_code, "race"), reply_markup = await kb.regRase())
+    is_valid, text = await name_validation(new_name, language_code)
+    if not is_valid:
+        await message.answer(text)
+        
+    else:
+        await state.update_data(new_name = new_name)
+        await state.set_state(UserRPG.setRace)
+        await message.answer(Message.get_message(language_code, "race"), reply_markup = await kb.regRase())
 
 
 
@@ -196,13 +178,37 @@ async def changeName(callback: CallbackQuery, state: FSMContext, language_code: 
 @profile.message(UserRPG.changeName)
 async def changeName(message: Message, state: FSMContext, language_code: str):
     new_name = message.text.strip() 
-    if 3 > len(new_name) > 25:
-        await message.answer(Message.get_message(language_code, "nameLength"))
-        return
-    await message.answer(Message.get_message(language_code, "nameChanged"))
-    await changeNameDB(message.from_user.id, new_name)
-    await state.clear()
-    await state.set_state(UserState.startMenu) 
+    is_valid, text = await name_validation(new_name, language_code)
+    if not is_valid:
+        await message.answer(text)
+    else:
+        await message.answer(Message.get_message(language_code, "nameChanged"))
+        await changeNameDB(message.from_user.id, new_name)
+        await state.clear()
+        await state.set_state(UserState.startMenu) 
+
+
+
+async def name_validation(new_name: str, language_code: str) -> tuple[bool, str]:
+    for pattern in compiled_patterns:
+        if pattern.search(new_name):
+            text = Message.get_message(language_code, "nameBad")
+            return False, text 
+    
+    if len(new_name) < 3 or len(new_name) >= 15:
+        text = Message.get_message(language_code, "nameLength")
+        return False, text
+    
+    elif emoji_specSign.search(new_name):
+        text = Message.get_message(language_code, "nameEmoji")
+        return False, text
+    
+    elif not letters.match(new_name):
+        text = Message.get_message(language_code, "nameLetters")
+        return False, text
+    
+    else:
+        return True, ""
 
 
 

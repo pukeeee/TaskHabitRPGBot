@@ -86,8 +86,13 @@ async def addTask_handler(message: Message, state: FSMContext, language_code: st
         return
     
     else:
-        await message.answer(Message.get_message(language_code, "addTask"))
-        await addTask(message.from_user.id, message.text)
+        text = message.text.strip()
+        if len(text) > 100:
+            await message.answer(Message.get_message(language_code, "taskLength"))
+            return
+        else:
+            await message.answer(Message.get_message(language_code, "addTask"))
+            await addTask(message.from_user.id, message.text)
 
 
 @task.callback_query(F.data.startswith("deltask_"))
@@ -145,14 +150,18 @@ async def todo_exception(message, state, language_code):
 async def editTask(message: Message, state: FSMContext, language_code: str):
     if await todo_exception(message, state, language_code):
         return
-    newText = message.text
-    data = await state.get_data()
-    taskId = data['taskId']
-    await editTaskInDB(taskId, newText)
-    await state.set_state(UserState.todo)
-    await message.answer("✅")
     
-    taskListMessage = await getTaskListMessage(language_code, message.from_user.id)
-    await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
+    text = message.text.strip()
+    if len(text) > 100:
+        await message.answer(Message.get_message(language_code, "taskLength"))
+        return
+    else:
+        data = await state.get_data()
+        taskId = data['taskId']
+        await editTaskInDB(taskId, text)
+        await state.set_state(UserState.todo)
+
+        taskListMessage = await getTaskListMessage(language_code, message.from_user.id)
+        await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
 
 

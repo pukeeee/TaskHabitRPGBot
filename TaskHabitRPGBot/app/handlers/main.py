@@ -22,6 +22,25 @@ router = Router()
 
 
 
+@router.message(CommandStart())
+async def startCommand(message: Message, language_code: str, state: FSMContext):
+    await setUser(message.from_user.id)
+    profile = await getProfileDB(message.from_user.id)
+
+    if profile:
+        await message.answer(
+            Message.get_message(language_code, "start"),
+            parse_mode = ParseMode.HTML,
+            reply_markup = await kb.startReplyKb(language_code)
+        )
+        await state.set_state(UserState.startMenu)
+        
+    else:
+        await state.set_state(UserRPG.setName)
+        await message.answer(Message.get_message(language_code, "newCharacter"), parse_mode = ParseMode.HTML)
+        
+
+
 @router.message(Command("donate"))
 async def donateComand(message: Message, command: CommandObject, language_code: str):
     if command.args is None or not command.args.isdigit() or not 1 <= int(command.args) <= 2500:
@@ -63,6 +82,11 @@ async def reset_habits(message: Message):
     else:
         await message.answer("No no no no buddy\nWrong way") 
 
+
+
+@router.message(Command("help"))
+async def help_command(message: Message):
+    await message.answer("dev: @pukeee")
 
 
 @router.message(Command("info"))

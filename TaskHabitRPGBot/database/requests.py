@@ -13,6 +13,7 @@ async def setUser(tg_id):
         if not user:
             session.add(User(tg_id = tg_id))
             await session.commit()
+        return user
 
 
 
@@ -75,7 +76,7 @@ async def getLeaderboard():
                                     .order_by(desc(User.experience))
                                     .limit(10)
                                 )
-        return users.fetchall()
+        return users.all()
 
 ###########
 """Tasks"""
@@ -171,7 +172,7 @@ async def getTodayHabits(tg_id):
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
         habits = await session.scalars(select(Habit).where(and_(
                                                                 Habit.user == user.id,
-                                                                Habit.is_active == True)))
+                                                                Habit.status == False)))
         return habits
 
 
@@ -192,13 +193,13 @@ async def markHabitAsCompleted(habitId, tg_id):
         if not habit:
             raise ValueError(f"Habit with id={habitId} not found")
         user.experience += habit.experience_points
-        habit.is_active = False
+        habit.status = True
         await session.commit()
 
 
 
 async def resetHabit():
     async with async_session() as session:
-        reset = update(Habit).where(Habit.is_active == False).values(is_active = True)
+        reset = update(Habit).where(Habit.status == True).values(status = False)
         await session.execute(reset)
         await session.commit()

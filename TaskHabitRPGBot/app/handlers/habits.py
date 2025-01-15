@@ -103,10 +103,14 @@ async def editHabitText(message: Message, state: FSMContext, language_code: str)
     if await habitExceptions(message, state, language_code):
         return
     
-    new_habit_text = message.text.strip()
-    await state.update_data(new_habit_text = new_habit_text)
-    await state.set_state(HabitState.editDays)
-    await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await kb.selectWeekdaysKB(language_code))
+    text = message.text.strip()
+    if len(text) > 100:
+        await message.answer(Message.get_message(language_code, "habitLength"))
+        
+    else:
+        await state.update_data(new_habit_text = text)
+        await state.set_state(HabitState.editDays)
+        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await kb.selectWeekdaysKB(language_code))
 
 
 
@@ -203,9 +207,13 @@ async def addHabit_handler(message: Message, state: FSMContext, language_code: s
     if await habitExceptions(message, state, language_code):
         return
     
-    await state.update_data(habit_text = message.text)
-    await state.set_state(HabitState.choosingDays)
-    await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await kb.selectWeekdaysKB(language_code))
+    text = message.text.strip()
+    if len(text) > 100:
+        await message.answer(Message.get_message(language_code, "habitLength"))
+    else:
+        await state.update_data(habit_text = text)
+        await state.set_state(HabitState.choosingDays)
+        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await kb.selectWeekdaysKB(language_code))
 
 
 
