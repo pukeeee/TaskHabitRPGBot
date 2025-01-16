@@ -233,6 +233,7 @@ async def deleteHabit(habitId):
 async def markHabitAsCompleted(habitId, tg_id):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        statistic = await session.scalar(select(Statistic).where(Statistic.user_id == user.id))
         if not user:
             raise ValueError(f"User with tg_id={tg_id} not found")
         habit = await session.scalar(select(Habit).where(Habit.id == habitId))
@@ -240,6 +241,26 @@ async def markHabitAsCompleted(habitId, tg_id):
             raise ValueError(f"Habit with id={habitId} not found")
         user.experience += habit.experience_points
         habit.status = True
+        
+        today_unix = int(time.mktime(time.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")))
+        
+        statistic = await session.scalar(
+            select(Statistic).where(
+                Statistic.user_id == user.id,
+                Statistic.date == today_unix
+            )
+        )
+        
+        if statistic:
+            statistic.habits_count += 1
+        else:
+            new_statistic = Statistic(
+                user_id = user.id,
+                date = today_unix,
+                habits_count = 1
+            )
+            session.add(new_statistic)
+        
         await session.commit()
 
 

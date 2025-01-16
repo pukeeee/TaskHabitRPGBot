@@ -35,7 +35,7 @@ async def todo_handler(message: Message, state: FSMContext, language_code: str):
         days_counter = (datetime.now(tz=timezone.utc) - start_date).days
         all_tasks_count = stat.all_tasks_count
         
-        await message.answer(Message.get_message(language_code, "statistic").format(start_date = formatted_start_date,
+        await message.answer(Message.get_message(language_code, "taskStatistic").format(start_date = formatted_start_date,
                                                                                     days_counter = days_counter,
                                                                                     all_tasks_count = all_tasks_count))
         

@@ -4,7 +4,7 @@ from aiogram.types.input_file import FSInputFile
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
-
+from datetime import datetime, timezone
 from app.messages import Message
 from database.requests import (setUser, getUserDB, getHabits, 
                                 addHabit, editHabit, 
@@ -33,7 +33,16 @@ async def habit_handler(message: Message, state: FSMContext, language_code: str)
         return
     
     elif message.text == "Statistic":
-        await message.answer("Not available now", parse_mode=ParseMode.HTML)
+        stat = await getUserDB(message.from_user.id)
+        
+        start_date = datetime.fromtimestamp(stat.start_date, tz=timezone.utc)
+        formatted_start_date = start_date.strftime("%d.%m.%y")
+        days_counter = (datetime.now(tz=timezone.utc) - start_date).days
+        all_habits_count = stat.all_habits_count
+        
+        await message.answer(Message.get_message(language_code, "habitStatistic").format(start_date = formatted_start_date,
+                                                                                    days_counter = days_counter,
+                                                                                    all_tasks_count = all_habits_count))
     
     elif message.text == Message.get_message(language_code, "todayHabitsButton"):
         await message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML, 
