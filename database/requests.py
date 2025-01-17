@@ -3,9 +3,9 @@ from database.models import User, Task, Habit, Profile, Statistic
 from sqlalchemy import select, update, delete, desc, and_
 import time
 
-###########
+#############
 """Profile"""
-###########
+#############
 
 async def setUser(tg_id):
     async with async_session() as session:
@@ -239,6 +239,8 @@ async def markHabitAsCompleted(habitId, tg_id):
         habit = await session.scalar(select(Habit).where(Habit.id == habitId))
         if not habit:
             raise ValueError(f"Habit with id={habitId} not found")
+        
+        user.all_habits_count += 1
         user.experience += habit.experience_points
         habit.status = True
         
