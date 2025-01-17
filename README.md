@@ -51,18 +51,18 @@ Track the total number of habits completed and monitor your consistency.
 ---
 
 ### 🎮 Gamified Mechanics
-	- **Experience Points (XP)**
+- **Experience Points (XP)**
 Earn XP for completing tasks and habits, leveling up your profile and boosting your motivation.
-	- **Dynamic Feedback**
+- **Dynamic Feedback**
 Each interaction is accompanied by clear feedback and engaging messages.
 
 ---
 
 ### 📊 Statistics
 The bot provides detailed stats to track your progress:
-	- Total tasks completed.
-	- Total habits completed.
-	- Days since you started using the bot.
+- Total tasks completed.
+- Total habits completed.
+- Days since you started using the bot.
 
 ---
 
@@ -79,17 +79,17 @@ Update your character and compete with others for the top spot on the leaderboar
 ---
 
 ### 🚀 Upcoming Features
-	- Notifications: Daily reminders for tasks and habits.
-	- Achievements: Unlock badges for milestones like 100 tasks completed.
-	- Analytics: More detailed insights into your productivity trends.
+- Notifications: Daily reminders for tasks and habits.
+- Achievements: Unlock badges for milestones like 100 tasks completed.
+- Analytics: More detailed insights into your productivity trends.
 
 ---
 
 ### 🎯 Why Use This Bot?
-	- Organize your life with ease.
-	- Stay motivated through gamification.
-	- Track progress and build lasting habits.
-	- Enjoy a fun and interactive user experience.
+- Organize your life with ease.
+- Stay motivated through gamification.
+- Track progress and build lasting habits.
+- Enjoy a fun and interactive user experience.
 
 ---
 
