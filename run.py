@@ -12,6 +12,7 @@ from app.handlers.tasks import task
 from app.handlers.habits import habit
 from config import TOKEN
 
+
 async def main():
     redis = Redis(host = "localhost", port = 6379, db = 0)
     storage = RedisStorage(redis)
