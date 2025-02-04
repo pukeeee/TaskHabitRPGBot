@@ -8,3 +8,4 @@ validators.py
 app/messages.py
 database/models.py
 
+.DS_Store
