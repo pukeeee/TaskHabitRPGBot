@@ -1,7 +1,7 @@
 from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
                         InlineKeyboardMarkup, InlineKeyboardButton)
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
-from app.messages import Message
+from TaskHabitRPGBot.app.l10n import Message
 from aiogram.fsm.context import FSMContext
 from database.requests import getUncompletedTask, getHabits, getTodayHabits
 import html

@@ -6,7 +6,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import random
 import os
-from app.messages import Message
+from TaskHabitRPGBot.app.l10n import Message
 from database.requests import (setUser, getUserDB,changeNameDB, 
                                 saveUserCharacter, getProfileDB, getLeaderboard)
 from app.fsm import UserState, UserRPG

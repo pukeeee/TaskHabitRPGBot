@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
 import random
 import os
-from app.messages import Message
+from TaskHabitRPGBot.app.l10n import Message
 from database.requests import (setUser, deleteTask, addTask, getUserDB, 
                                 addHabit, deleteHabit, getTaskById, 
                                 editTaskInDB, markHabitAsCompleted, markTaskAsCompleted,
