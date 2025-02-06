@@ -5,7 +5,7 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
-from TaskHabitRPGBot.app.l10n import Message
+from app.l10n import Message
 from database.requests import (setUser, getUserDB, getHabits, 
                                 addHabit, editHabit, 
                                 editTaskInDB, markHabitAsCompleted, changeNameDB,

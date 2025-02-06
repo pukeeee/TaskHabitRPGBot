@@ -6,7 +6,7 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 import random
 import os
-from TaskHabitRPGBot.app.l10n import Message
+from app.l10n import Message
 from database.requests import (setUser, deleteTask, addTask, getUserDB, 
                                 addHabit, deleteHabit, getTaskById, 
                                 editTaskInDB, markHabitAsCompleted, changeNameDB,

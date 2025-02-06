@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
 import random
 import os
-from TaskHabitRPGBot.app.l10n import Message
+from app.l10n import Message
 from database.requests import (setUser, deleteTask, addTask, getUserDB, 
                                 addHabit, deleteHabit, getTaskById, 
                                 editTaskInDB, markHabitAsCompleted, markTaskAsCompleted,
@@ -127,8 +127,11 @@ async def addTask_handler(message: Message, state: FSMContext, language_code: st
             await message.answer(Message.get_message(language_code, "taskLength"))
             return
         else:
-            await message.answer(Message.get_message(language_code, "addTask"))
-            await addTask(message.from_user.id, message.text)
+            newTask = await addTask(message.from_user.id, message.text)
+            if newTask == False:
+                await message.answer(Message.get_message(language_code, "taskLimitReached"))
+            else:
+                await message.answer(Message.get_message(language_code, "addTask"))
 
 
 @task.callback_query(F.data.startswith("deltask_"))

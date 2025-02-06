@@ -1,6 +1,6 @@
 from database.models import async_session
 from database.models import User, Task, Habit, Profile, Statistic
-from sqlalchemy import select, update, delete, desc, and_
+from sqlalchemy import select, update, delete, desc, and_, func
 import time
 
 #############
@@ -101,10 +101,15 @@ async def getCompletedTask(tg_id):
 
 
 
-async def addTask(tg_id, task):
+async def addTask(tg_id, text):
     async with async_session() as session:
         user = await session.scalar(select(User).where(User.tg_id == tg_id))
-        session.add(Task(task = task, user = user.id))
+        
+        tasksCount = await session.scalar(select(func.count(Task.id)).where(and_(Task.user == user.id, Task.status == False)))
+        if tasksCount >= 10:
+            return False
+        
+        session.add(Task(task = text, user = user.id))
         await session.commit()
 
 
