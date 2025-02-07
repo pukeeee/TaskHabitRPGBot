@@ -7,18 +7,30 @@ from aiogram.fsm.context import FSMContext
 import random
 import os
 from app.l10n import Message
-from database.requests import (setUser, getUserDB,changeNameDB, 
-                                saveUserCharacter, getProfileDB, getLeaderboard)
+from database.repositories import (
+    setUser,
+    getUserDB,
+    changeNameDB,
+    saveUserCharacter,
+    getProfileDB,
+    getLeaderboard
+)
 from app.fsm import UserState, UserRPG
 from validators import emoji_specSign, letters, compiled_patterns
-import app.keyboards as kb
+from app.keyboards import (
+    startReplyKb,
+    regRase,
+    regSex,
+    regClass,
+    profileInLineKB,
+    avatarNavigationKB
+)
 from config import IMG_FOLDER
 
-profile = Router()
+router = Router()
+router.name = 'profiles'
 
-
-
-@profile.message(UserRPG.setName)
+@router.message(UserRPG.setName)
 async def setName_handler(message: Message, state: FSMContext, language_code: str):
     new_name = message.text.strip() 
     is_valid, text = await name_validation(new_name, language_code)
@@ -28,51 +40,51 @@ async def setName_handler(message: Message, state: FSMContext, language_code: st
     else:
         await state.update_data(new_name = new_name)
         await state.set_state(UserRPG.setRace)
-        await message.answer(Message.get_message(language_code, "race"), reply_markup = await kb.regRase())
+        await message.answer(Message.get_message(language_code, "race"), reply_markup = await regRase())
 
 
 
-@profile.callback_query(F.data.startswith ("raseFolder_"), UserRPG.setRace)
+@router.callback_query(F.data.startswith ("raseFolder_"), UserRPG.setRace)
 async def setRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
     folder_name = callback.data[len("raseFolder_"):]
     
     await state.update_data(selected_race_folder = folder_name)
     await state.set_state(UserRPG.setSex)
     await callback.message.edit_text(text = Message.get_message(language_code, "sex"), parse_mode = ParseMode.HTML, 
-                                    reply_markup = await kb.regSex(state))
+                                    reply_markup = await regSex(state))
     await callback.answer()
 
 
 
-@profile.callback_query(F.data == "backToRace")
+@router.callback_query(F.data == "backToRace")
 async def backToRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
     await state.set_state(UserRPG.setRace)
-    await callback.message.edit_text(Message.get_message(language_code, "race"), reply_markup = await kb.regRase())
+    await callback.message.edit_text(Message.get_message(language_code, "race"), reply_markup = await regRase())
     await callback.answer()
 
 
 
-@profile.callback_query(F.data.startswith("sexFolder_"), UserRPG.setSex)
+@router.callback_query(F.data.startswith("sexFolder_"), UserRPG.setSex)
 async def setSex_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
     folder_name = callback.data[len("sexFolder_"):]
 
     await state.update_data(selected_sex_folder = folder_name)
     await state.set_state(UserRPG.setClass)
-    await callback.message.edit_text(text = Message.get_message(language_code, "class"), reply_markup = await kb.regClass(state))
+    await callback.message.edit_text(text = Message.get_message(language_code, "class"), reply_markup = await regClass(state))
     await callback.answer()
 
 
 
-@profile.callback_query(F.data == "backToSex")
+@router.callback_query(F.data == "backToSex")
 async def backToRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
     await state.set_state(UserRPG.setSex)
     await callback.message.edit_text(text = Message.get_message(language_code, "sex"), parse_mode = ParseMode.HTML, 
-                                    reply_markup = await kb.regSex(state))
+                                    reply_markup = await regSex(state))
     await callback.answer()
 
 
 
-@profile.callback_query(F.data.startswith("classFolder_"), UserRPG.setClass)
+@router.callback_query(F.data.startswith("classFolder_"), UserRPG.setClass)
 async def setClass_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
     class_name = callback.data[len("classFolder_"):]
     await state.update_data(selected_class_folder = class_name)
@@ -89,11 +101,11 @@ async def setClass_handler(callback: types.CallbackQuery, state: FSMContext, lan
 
 
 
-@profile.callback_query(F.data == "backToClass")
+@router.callback_query(F.data == "backToClass")
 async def backToRace_handler(callback: types.CallbackQuery, state: FSMContext, language_code: str):
     await state.set_state(UserRPG.setClass)
     await callback.message.delete()
-    await callback.message.answer(text = Message.get_message(language_code, "class"), reply_markup = await kb.regClass(state))
+    await callback.message.answer(text = Message.get_message(language_code, "class"), reply_markup = await regClass(state))
     await callback.answer()
 
 
@@ -108,12 +120,12 @@ async def send_avatar(callback: CallbackQuery, img_files: list, current_index: i
     photo_path = os.path.join(class_folder_path, img_files[current_index])
     photo = FSInputFile(photo_path)
     media = types.InputMediaPhoto(media = photo, caption = f"👾 {current_index + 1} / {len(img_files)}")
-    await callback.message.edit_media(media = media, reply_markup = await kb.avatarNavigationKB(language_code))
+    await callback.message.edit_media(media = media, reply_markup = await avatarNavigationKB(language_code))
     await state.update_data(selected_img = img_files[current_index])
 
 
 
-@profile.callback_query(F.data == "prev_img")
+@router.callback_query(F.data == "prev_img")
 async def prev_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = await state.get_data()
     img_files = data.get('img_files', [])
@@ -127,7 +139,7 @@ async def prev_avatar(callback: CallbackQuery, state: FSMContext, language_code:
 
 
 
-@profile.callback_query(F.data == "next_img")
+@router.callback_query(F.data == "next_img")
 async def next_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = await state.get_data()
     img_files = data.get('img_files', [])
@@ -141,7 +153,7 @@ async def next_avatar(callback: CallbackQuery, state: FSMContext, language_code:
 
 
 
-@profile.callback_query(F.data == "done_img")
+@router.callback_query(F.data == "done_img")
 async def done_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = await state.get_data()
     user_name = data.get('new_name', '')
@@ -161,21 +173,21 @@ async def done_avatar(callback: CallbackQuery, state: FSMContext, language_code:
     await callback.message.delete()
     await callback.message.answer(text = Message.get_message(language_code, "characterAdded"), parse_mode = ParseMode.HTML)
     await callback.message.answer(Message.get_message(language_code, "start"), parse_mode = ParseMode.HTML, 
-                                    reply_markup = await kb.startReplyKb(language_code))
+                                    reply_markup = await startReplyKb(language_code))
     await state.clear()
     await state.set_state(UserState.startMenu)
     await callback.answer()
 
 
 
-@profile.callback_query(F.data == "changeName")
+@router.callback_query(F.data == "changeName")
 async def changeName(callback: CallbackQuery, state: FSMContext, language_code: str):
     await callback.message.answer(Message.get_message(language_code, "changeName"))
     await state.set_state(UserRPG.changeName)
 
 
 
-@profile.message(UserRPG.changeName)
+@router.message(UserRPG.changeName)
 async def changeName(message: Message, state: FSMContext, language_code: str):
     new_name = message.text.strip() 
     is_valid, text = await name_validation(new_name, language_code)
@@ -212,16 +224,16 @@ async def name_validation(new_name: str, language_code: str) -> tuple[bool, str]
 
 
 
-@profile.callback_query(F.data == "changeAvatar")
+@router.callback_query(F.data == "changeAvatar")
 async def changeAvatar_handler(callback: CallbackQuery, state: FSMContext, language_code: str):
     profile = await getProfileDB(callback.from_user.id)
     await state.update_data(new_name = profile.user_name)
     await state.set_state(UserRPG.setRace)
-    await callback.message.answer(Message.get_message(language_code, "changeAvatar"), reply_markup = await kb.regRase())
+    await callback.message.answer(Message.get_message(language_code, "changeAvatar"), reply_markup = await regRase())
 
 
 
-@profile.callback_query(F.data == "leaderboard")
+@router.callback_query(F.data == "leaderboard")
 async def leaderboardMessage(callback: CallbackQuery, state: FSMContext, language_code: str):
     leaderboard = await generateLeaderboard()
     await callback.message.answer(leaderboard, parse_mode=ParseMode.HTML)

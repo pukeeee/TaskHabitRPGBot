@@ -6,32 +6,44 @@ from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis 
 from app.middlewares import LanguageMiddleware
 from database.models import async_main
-from app.handlers.main import router
-from app.handlers.profiles import profile
-from app.handlers.tasks import task
-from app.handlers.habits import habit
+from app.handlers import (
+    main_router,
+    profile_router,
+    task_router,
+    habit_router
+)
 from config import TOKEN
 
 
 async def main():
-    redis = Redis(host = "localhost", port = 6379, db = 0)
+    redis = Redis(host="localhost", port=6379, db=0)
     storage = RedisStorage(redis)
     
     await async_main()
-    bot = Bot(token = TOKEN, 
-            default = DefaultBotProperties(parse_mode = ParseMode.HTML))
-    dp = Dispatcher(storage = storage)
+    bot = Bot(
+        token=TOKEN, 
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
+    
+    dp = Dispatcher(storage=storage)
+    
+    # Подключаем middleware
     dp.message.middleware(LanguageMiddleware())
     dp.callback_query.middleware(LanguageMiddleware())
-    dp.include_router(router)
-    dp.include_router(profile)
-    dp.include_router(habit)
-    dp.include_router(task)
+    
+    # Подключаем все роутеры
+    dp.include_routers(
+        main_router,
+        profile_router,
+        task_router,
+        habit_router
+    )
 
     await dp.start_polling(bot)
+
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        pass
+        print("Bot stopped!")

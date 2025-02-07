@@ -6,30 +6,47 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
 from app.l10n import Message
-from database.requests import (setUser, getUserDB, getHabits, 
-                                addHabit, editHabit, 
-                                editTaskInDB, markHabitAsCompleted, changeNameDB,
-                                getProfileDB, resetHabit, deleteHabit, getHabitById)
+from database.repositories import (
+    addHabit,
+    editHabit,
+    deleteHabit,
+    getHabits,
+    getHabitById,
+    getTodayHabits,
+    markHabitAsCompleted,
+    resetHabit,
+    getUserDB
+)
 from app.fsm import UserState, HabitState, TaskState, UserRPG
-import app.keyboards as kb
+from app.keyboards import (
+    habitsReplyKB,
+    addHabitReplyKB,
+    habitsList,
+    deleteHabits,
+    editHabits,
+    selectWeekdaysKB,
+    todayHabits,
+    startReplyKb
+)
 
 
-habit = Router()
+router = Router()
+router.name = 'habits'
 
 
-@habit.message(UserState.habits)
+@router.message(UserState.habits)
 async def habit_handler(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "habitListButton"):
         habitListMessage = await getHabitListMessage(language_code, message.from_user.id)
-        await message.answer(habitListMessage, reply_markup = await kb.habitsList(message.from_user.id, language_code))
+        await message.answer(habitListMessage, reply_markup = await habitsList(message.from_user.id, language_code))
     
     elif message.text == Message.get_message(language_code, "addHabitButton"):
         await state.set_state(HabitState.habitText)
-        await message.answer(Message.get_message(language_code, "addHabit"), reply_markup = await kb.addHabitReplyKB(language_code))
+        await message.answer(Message.get_message(language_code, "addHabit"), reply_markup = await addHabitReplyKB(language_code))
     
     elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
-        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         return
     
     elif message.text == "Statistic":
@@ -46,7 +63,7 @@ async def habit_handler(message: Message, state: FSMContext, language_code: str)
     
     elif message.text == Message.get_message(language_code, "todayHabitsButton"):
         await message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML, 
-                                                reply_markup = await kb.todayHabits(message.from_user.id, language_code))
+                                                reply_markup = await todayHabits(message.from_user.id, language_code))
 
 
 
@@ -65,38 +82,38 @@ async def getHabitListMessage(language_code: str, tg_id):
 
 
 
-@habit.callback_query(F.data == "deleteHabits")
+@router.callback_query(F.data == "deleteHabits")
 async def deleteHabitsList(callback: CallbackQuery, language_code: str):
-    await callback.message.edit_text(text = Message.get_message(language_code, "deleteHabit"), reply_markup = await kb.deleteHabits(callback.from_user.id))
+    await callback.message.edit_text(text = Message.get_message(language_code, "deleteHabit"), reply_markup = await deleteHabits(callback.from_user.id))
     await callback.answer()
 
 
 
-@habit.callback_query(F.data == "editHabits")
+@router.callback_query(F.data == "editHabits")
 async def editHabitsList(callback: CallbackQuery, language_code: str):
-    await callback.message.edit_text(text = Message.get_message(language_code, "editHabit"), reply_markup = await kb.editHabits(callback.from_user.id))
+    await callback.message.edit_text(text = Message.get_message(language_code, "editHabit"), reply_markup = await editHabits(callback.from_user.id))
     await callback.answer()
 
 
 
-@habit.callback_query(F.data == "backToHabitsList")
+@router.callback_query(F.data == "backToHabitsList")
 async def backToHabitsList(callback: CallbackQuery, language_code: str):
     habitListMessage = await getHabitListMessage(language_code, callback.from_user.id)
     await callback.message.edit_text(text = habitListMessage, 
-                                    reply_markup = await kb.habitsList(callback.from_user.id, language_code))
+                                    reply_markup = await habitsList(callback.from_user.id, language_code))
     await callback.answer()
 
 
-@habit.callback_query(F.data.startswith("delhabit_"))
+@router.callback_query(F.data.startswith("delhabit_"))
 async def delete_habit(callback: CallbackQuery, language_code: str):
     await callback.answer("✅")
     await deleteHabit(callback.data.split("_")[1])
     await callback.message.edit_text(text = Message.get_message(language_code, "deleteHabit"), 
-                                    reply_markup = await kb.deleteHabits(callback.from_user.id))
+                                    reply_markup = await deleteHabits(callback.from_user.id))
 
 
 
-@habit.callback_query(F.data.startswith("edithabit_"))
+@router.callback_query(F.data.startswith("edithabit_"))
 async def edit_habit(callback: CallbackQuery, language_code: str, state: FSMContext):
     await callback.answer("✏️")
     habitId = callback.data.split("_")[1]
@@ -107,7 +124,7 @@ async def edit_habit(callback: CallbackQuery, language_code: str, state: FSMCont
 
 
 
-@habit.message(HabitState.edithabitText)
+@router.message(HabitState.edithabitText)
 async def editHabitText(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
@@ -119,18 +136,18 @@ async def editHabitText(message: Message, state: FSMContext, language_code: str)
     else:
         await state.update_data(new_habit_text = text)
         await state.set_state(HabitState.editDays)
-        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await kb.selectWeekdaysKB(language_code))
+        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await selectWeekdaysKB(language_code))
 
 
 
-@habit.message(HabitState.editDays)
+@router.message(HabitState.editDays)
 async def editHabitDays(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
 
 
 
-@habit.message(HabitState.editExp)
+@router.message(HabitState.editExp)
 async def editHabitExp(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
@@ -153,7 +170,7 @@ async def editHabitExp(message: Message, state: FSMContext, language_code: str):
     await editHabit(habitId, new_habit_text, habit_days, new_habit_experience)
     habitListMessage = await getHabitListMessage(language_code, message.from_user.id)
     await message.answer(text = habitListMessage, 
-                                    reply_markup = await kb.habitsList(message.from_user.id, language_code))
+                                    reply_markup = await habitsList(message.from_user.id, language_code))
     await state.clear()
     await state.set_state(UserState.habits) 
 
@@ -163,33 +180,33 @@ async def habitExceptions(message: Message, state: FSMContext, language_code: st
     if message.text == Message.get_message(language_code, "homeButton"):
         await state.clear()
         await state.set_state(UserState.startMenu)
-        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         return True
     
     elif message.text == Message.get_message(language_code, "backToHabitButton"):
         await state.clear()
         await state.set_state(UserState.habits)
         await message.answer(Message.get_message(language_code, "habitStart"), parse_mode=ParseMode.HTML, 
-                            reply_markup = await kb.habitsReplyKB(language_code))
+                            reply_markup = await habitsReplyKB(language_code))
         return True
     
     elif message.text == Message.get_message(language_code, "habitListButton"):
         habitListMessage = await getHabitListMessage(language_code, message.from_user.id)
-        await message.answer(habitListMessage, reply_markup = await kb.habitsList(message.from_user.id, language_code))
+        await message.answer(habitListMessage, reply_markup = await habitsList(message.from_user.id, language_code))
         await state.clear()
         await state.set_state(UserState.habits)
         return True
     
     elif message.text == Message.get_message(language_code, "addHabitButton"):
         await state.set_state(HabitState.habitText)
-        await message.answer(Message.get_message(language_code, "addHabit"), reply_markup = await kb.addHabitReplyKB(language_code))
+        await message.answer(Message.get_message(language_code, "addHabit"), reply_markup = await addHabitReplyKB(language_code))
         await state.clear()
         await state.set_state(UserState.habits)
         return True
     
     elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
-        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         await state.clear()
         await state.set_state(UserState.habits)
         return True
@@ -202,7 +219,7 @@ async def habitExceptions(message: Message, state: FSMContext, language_code: st
     
     elif message.text == Message.get_message(language_code, "todayHabitsButton"):
         await message.answer(Message.get_message(language_code, "todayHabits"), parse_mode=ParseMode.HTML, 
-                                                reply_markup = await kb.todayHabits(message.from_user.id, language_code))
+                                                reply_markup = await todayHabits(message.from_user.id, language_code))
         await state.clear()
         await state.set_state(UserState.habits)
         return True
@@ -211,7 +228,7 @@ async def habitExceptions(message: Message, state: FSMContext, language_code: st
 
 
 
-@habit.message(HabitState.habitText)
+@router.message(HabitState.habitText)
 async def addHabit_handler(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
@@ -222,18 +239,18 @@ async def addHabit_handler(message: Message, state: FSMContext, language_code: s
     else:
         await state.update_data(habit_text = text)
         await state.set_state(HabitState.choosingDays)
-        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await kb.selectWeekdaysKB(language_code))
+        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await selectWeekdaysKB(language_code))
 
 
 
-@habit.message(HabitState.choosingDays)
+@router.message(HabitState.choosingDays)
 async def addHabitDays(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
 
 
 
-@habit.message(HabitState.setExp)
+@router.message(HabitState.setExp)
 async def addHabitExp(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
@@ -279,7 +296,7 @@ def daysToBinary(selected_days):
 
 
 
-@habit.callback_query(F.data.startswith("habitDays_"))
+@router.callback_query(F.data.startswith("habitDays_"))
 async def daysSelection(callback: CallbackQuery, state: FSMContext, language_code: str):
     data = callback.data
     current_state = await state.get_state()
@@ -312,14 +329,14 @@ async def daysSelection(callback: CallbackQuery, state: FSMContext, language_cod
         else:
             selected_days.append(day)
         await state.update_data(selected_days = selected_days)
-        await callback.message.edit_reply_markup(reply_markup = await kb.selectWeekdaysKB(language_code, selected_days)
+        await callback.message.edit_reply_markup(reply_markup = await selectWeekdaysKB(language_code, selected_days)
         )
         
     await callback.answer()
 
 
 
-@habit.callback_query(F.data.startswith("completedHabit_"))
+@router.callback_query(F.data.startswith("completedHabit_"))
 async def completeTodayHabit(callback: CallbackQuery, language_code: str):
     habitId = callback.data.split("_")[1]
     habitExp = callback.data.split("_")[2]
@@ -327,4 +344,4 @@ async def completeTodayHabit(callback: CallbackQuery, language_code: str):
     habitText = Message.get_message(language_code, "habitCompleted")
     await callback.answer(f"{habitText} +{habitExp} ✨")
     await callback.message.edit_text(text = Message.get_message(language_code, "todayHabits"), parse_mode = ParseMode.HTML, 
-                                                reply_markup = await kb.todayHabits(callback.from_user.id, language_code))
+                                                reply_markup = await todayHabits(callback.from_user.id, language_code))

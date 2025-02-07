@@ -6,19 +6,35 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 import random
 import os
-from app.l10n import Message
-from database.requests import (setUser, deleteTask, addTask, getUserDB, 
-                                addHabit, deleteHabit, getTaskById, 
-                                editTaskInDB, markHabitAsCompleted, changeNameDB,
-                                getProfileDB, resetHabit)
+from app.l10n import Message as L10nMessage
+from database.repositories import (
+    setUser,
+    deleteTask,
+    addTask,
+    getUserDB,
+    addHabit,
+    deleteHabit,
+    getTaskById,
+    editTaskInDB,
+    markHabitAsCompleted,
+    changeNameDB,
+    getProfileDB,
+    resetHabit
+)
 from app.fsm import UserState, HabitState, TaskState, UserRPG
-import app.keyboards as kb
+from app.keyboards import (
+    startReplyKb,
+    todoReplyKB,
+    profileInLineKB,
+    habitsReplyKB
+)
 from config import IMG_FOLDER
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
 
 router = Router()
+router.name = 'main'
 
 
 
@@ -29,29 +45,29 @@ async def startCommand(message: Message, language_code: str, state: FSMContext):
 
     if profile:
         await message.answer(
-            Message.get_message(language_code, "start"),
+            L10nMessage.get_message(language_code, "start"),
             parse_mode = ParseMode.HTML,
-            reply_markup = await kb.startReplyKb(language_code)
+            reply_markup = await startReplyKb(language_code)
         )
         await state.set_state(UserState.startMenu)
         
     else:
         await state.set_state(UserRPG.setName)
-        await message.answer(Message.get_message(language_code, "newCharacter"), parse_mode = ParseMode.HTML)
+        await message.answer(L10nMessage.get_message(language_code, "newCharacter"), parse_mode = ParseMode.HTML)
         
 
 
 @router.message(Command("donate"))
 async def donateComand(message: Message, command: CommandObject, language_code: str):
     if command.args is None or not command.args.isdigit() or not 1 <= int(command.args) <= 2500:
-        await message.answer(Message.get_message(language_code, "donate"), parse_mode=ParseMode.HTML)
+        await message.answer(L10nMessage.get_message(language_code, "donate"), parse_mode=ParseMode.HTML)
         return
     
     amount = int(command.args)
     prices = [LabeledPrice(label="XTR", amount=amount)]
     await message.answer_invoice(
-        title=Message.get_message(language_code, "invoiceTitle"),
-        description=Message.get_message(language_code, "invoiceDescription"),
+        title=L10nMessage.get_message(language_code, "invoiceTitle"),
+        description=L10nMessage.get_message(language_code, "invoiceDescription"),
         prices=prices,
         provider_token="",
         payload=f"{amount}_stars",
@@ -69,7 +85,7 @@ async def pre_checkout_query(query: PreCheckoutQuery):
 @router.message(F.successful_payment)
 async def on_successfull_payment(message: Message, language_code: str):
     # await message.answer(message.successful_payment.telegram_payment_charge_id)
-    await message.answer(Message.get_message(language_code, "donateTy"),message_effect_id="5159385139981059251")
+    await message.answer(L10nMessage.get_message(language_code, "donateTy"),message_effect_id="5159385139981059251")
 
 
 
@@ -94,11 +110,11 @@ async def info_message(message: Message, state: FSMContext, language_code: str):
     current_state = await state.get_state()
 
     if current_state == UserState.todo.state:
-        await message.answer(Message.get_message(language_code, "taskTrackerInfo"))
+        await message.answer(L10nMessage.get_message(language_code, "taskTrackerInfo"))
     elif current_state == UserState.startMenu.state:
-        await message.answer(Message.get_message(language_code, "homeInfo"))
+        await message.answer(L10nMessage.get_message(language_code, "homeInfo"))
     elif current_state == UserState.habits.state:
-        await message.answer(Message.get_message(language_code, "habitTrackerInfo"))
+        await message.answer(L10nMessage.get_message(language_code, "habitTrackerInfo"))
 
 
 ###############
@@ -108,17 +124,17 @@ async def info_message(message: Message, state: FSMContext, language_code: str):
 
 @router.message(UserState.startMenu)
 async def main_process(message: Message, state: FSMContext, language_code: str):
-    if message.text == Message.get_message(language_code, "habitTrackerButton"):
+    if message.text == L10nMessage.get_message(language_code, "habitTrackerButton"):
         await state.set_state(UserState.habits)
-        await message.answer(Message.get_message(language_code, "habitStart"), 
-                            reply_markup = await kb.habitsReplyKB(language_code))
+        await message.answer(L10nMessage.get_message(language_code, "habitStart"), 
+                            reply_markup = await habitsReplyKB(language_code))
 
-    elif message.text == Message.get_message(language_code, "taskTrackerButton"):
+    elif message.text == L10nMessage.get_message(language_code, "taskTrackerButton"):
         await state.set_state(UserState.todo)
-        await message.answer(Message.get_message(language_code, "todoStart"), 
-                            reply_markup = await kb.todoReplyKB(language_code))
+        await message.answer(L10nMessage.get_message(language_code, "todoStart"), 
+                            reply_markup = await todoReplyKB(language_code))
 
-    elif message.text == Message.get_message(language_code, "profileButton"):
+    elif message.text == L10nMessage.get_message(language_code, "profileButton"):
         user = await getUserDB(message.from_user.id)
         profile = await getProfileDB(message.from_user.id)
         
@@ -128,11 +144,11 @@ async def main_process(message: Message, state: FSMContext, language_code: str):
         avatar_file = os.path.join(IMG_FOLDER, profile.race, profile.sex, profile.clas, profile.avatar)
         photo = FSInputFile(avatar_file)
         
-        profile_message = Message.get_message(language_code, "profile").format(user_name = user_name,
+        profile_message = L10nMessage.get_message(language_code, "profile").format(user_name = user_name,
                                                                                 userExperience = userExperience,
                                                                                 experience = experience)
         
         await message.answer_photo(photo = photo,
                                     caption = profile_message,
                                     parse_mode = ParseMode.HTML,
-                                    reply_markup = await kb.profileInLineKB(language_code))
+                                    reply_markup = await profileInLineKB(language_code))
