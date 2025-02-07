@@ -10,7 +10,8 @@ from app.handlers import (
     main_router,
     profile_router,
     task_router,
-    habit_router
+    habit_router,
+    commands_router
 )
 from config import TOKEN
 
@@ -33,6 +34,7 @@ async def main():
     
     # Подключаем все роутеры
     dp.include_routers(
+        commands_router,
         main_router,
         profile_router,
         task_router,

@@ -22,8 +22,6 @@ class TaskState(StatesGroup):
 
 class UserRPG(StatesGroup):
     setName = State()
-    setRace = State()
-    setSex = State()
-    setClass = State()
+    setAvatar = State()
     changeName = State()
     changeAvatar = State()

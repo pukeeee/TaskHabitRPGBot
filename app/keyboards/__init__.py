@@ -1,8 +1,5 @@
 from .profile_kb import (
     startReplyKb,
-    regRase,
-    regSex,
-    regClass,
     profileInLineKB,
     avatarNavigationKB
 )
@@ -29,9 +26,6 @@ from .habit_kb import (
 __all__ = [
     # Profile keyboards
     'startReplyKb',
-    'regRase',
-    'regSex',
-    'regClass',
     'profileInLineKB',
     'avatarNavigationKB',
     

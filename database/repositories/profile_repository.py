@@ -41,9 +41,13 @@ class ProfileRepository(BaseRepository):
                     .values(user_name=new_name)
                 )
 
-    async def save_character(self, tg_id: int, user_name: str, avatar: str, 
-                           race: str, sex: str, clas: str) -> None:
+    async def save_character(self, tg_id: int, user_name: str, avatar: str) -> None:
         async with self.begin():
+            # Убираем префикс из имени файла аватара, но сохраняем расширение
+            # (например, "1_Dark Knight.png" -> "Dark Knight.png")
+            avatar_name = avatar.split('_', 1)[1] if '_' in avatar else avatar
+            print(f"Saving to DB - original avatar: {avatar}, cleaned avatar: {avatar_name}")
+            
             user = await self.get_user(tg_id)
             if user:
                 profile = await self.session.scalar(
@@ -51,20 +55,16 @@ class ProfileRepository(BaseRepository):
                 )
                 if profile:
                     profile.user_name = user_name
-                    profile.avatar = avatar
-                    profile.race = race
-                    profile.sex = sex
-                    profile.clas = clas
+                    profile.avatar = avatar_name
+                    print(f"Updated profile - user_name: {profile.user_name}, avatar: {profile.avatar}")
                 else:
                     new_profile = Profile(
                         user=user.id,
                         user_name=user_name,
-                        avatar=avatar,
-                        race=race,
-                        sex=sex,
-                        clas=clas
+                        avatar=avatar_name
                     )
                     self.session.add(new_profile)
+                    print(f"Created new profile - user_name: {user_name}, avatar: {avatar_name}")
 
     async def get_leaderboard(self) -> List[Tuple[str, int]]:
         async with self.begin():
@@ -94,10 +94,9 @@ async def changeNameDB(tg_id: int, new_name: str) -> None:
     async with ProfileRepository() as repo:
         await repo.change_name(tg_id, new_name)
 
-async def saveUserCharacter(tg_id: int, user_name: str, avatar: str, 
-                          race: str, sex: str, clas: str) -> None:
+async def saveUserCharacter(tg_id: int, user_name: str, avatar: str) -> None:
     async with ProfileRepository() as repo:
-        await repo.save_character(tg_id, user_name, avatar, race, sex, clas)
+        await repo.save_character(tg_id, user_name, avatar)
 
 async def getLeaderboard() -> List[Tuple[str, int]]:
     async with ProfileRepository() as repo:

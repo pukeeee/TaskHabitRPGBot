@@ -1,8 +1,6 @@
 from aiogram import Router, F, types
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from aiogram.types.input_file import FSInputFile
+from aiogram.types import Message, CallbackQuery
 from aiogram.enums.parse_mode import ParseMode
-from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
 import random
@@ -18,7 +16,7 @@ from database.repositories import (
     getCompletedTask,
     getUserDB
 )
-from app.fsm import UserState, HabitState, TaskState, UserRPG
+from app.fsm import UserState, TaskState
 import app.keyboards as kb
 
 router = Router()
