@@ -62,7 +62,8 @@ async def setName_handler(message: Message, state: FSMContext, language_code: st
     else:
         await state.update_data(new_name = new_name)
         await state.set_state(UserRPG.setAvatar)
-        await message.answer(L10nMessage.get_message(language_code, "race"))
+        # await message.answer(L10nMessage.get_message(language_code, "race"))
+        await setAvatar(message, state, language_code)
 
 
 
