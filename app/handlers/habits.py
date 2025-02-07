@@ -74,8 +74,10 @@ async def getHabitListMessage(language_code: str, tg_id):
         message += "🚽\n"
         
     else:
+        message += "\n\n"
         for habit in habitList:
             message += f"▫️  {habit.name}  |   + {habit.experience_points} ✨\n"
+        message += "\n"
     message += Message.get_message(language_code, "habitMessage")
     
     return message

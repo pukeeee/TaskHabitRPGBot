@@ -29,21 +29,41 @@ router.name = 'commands'
 
 @router.message(CommandStart())
 async def startCommand(message: Message, language_code: str, state: FSMContext):
+    print(f"Start command called with language: {language_code}")
+    
     await setUser(message.from_user.id)
     profile = await getProfileDB(message.from_user.id)
+    print(f"User profile: {profile}")
 
     if profile:
+        # Получаем текст приветствия
+        text = L10nMessage.get_message(language_code, "start")
+        print(f"Localized start message:")
+        print(f"Language: {language_code}")
+        print(f"Message ID: start")
+        print(f"Retrieved text: {text}")
+        
+        # Получаем клавиатуру
+        keyboard = await startReplyKb(language_code)
+        print(f"Reply keyboard: {keyboard}")
+        
+        # Отправляем сообщение
         await message.answer(
-            L10nMessage.get_message(language_code, "start"),
-            parse_mode = ParseMode.HTML,
-            reply_markup = await startReplyKb(language_code)
+            text=text,
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard
         )
         await state.set_state(UserState.startMenu)
-        
     else:
-        await state.set_state(UserRPG.setName)
-        await message.answer(L10nMessage.get_message(language_code, "newCharacter"), parse_mode = ParseMode.HTML)
+        new_user_text = L10nMessage.get_message(language_code, "newCharacter")
+        print(f"New user message: {new_user_text}")
         
+        await state.set_state(UserRPG.setName)
+        await message.answer(
+            text=new_user_text,
+            parse_mode=ParseMode.HTML
+        )
+
 
 
 @router.message(Command("donate"))

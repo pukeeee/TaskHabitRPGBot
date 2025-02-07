@@ -9,3 +9,6 @@ app/messages.py
 database/models.py
 
 .DS_Store
+app/l10n/en.ftl
+app/l10n/ru.ftl
+app/l10n/uk.ftl

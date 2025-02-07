@@ -67,8 +67,10 @@ async def getUncompletedTasks(language_code: str, tg_id):
     if not taskList:
         message += "🚽\n"
     else:
+        message += "\n\n"
         for task in taskList:
             message += f"▫️  <b>{task.task}</b>\n"
+        message += "\n"
     message += Message.get_message(language_code, "taskListMessage")
     return message
 
@@ -80,9 +82,11 @@ async def getCompletedTasks(language_code: str, tg_id):
     if not taskList:
         message += "🚽\n"
     else:
+        message += "\n\n"
         for task in taskList:
             done_date = datetime.fromtimestamp(task.done_date, tz=timezone.utc).strftime("%d.%m")
             message += f"▫️ <i>{done_date}</i>:  <b>{task.task}</b>\n"
+        message += "\n"
     message += Message.get_message(language_code, "completedTasksMessage")
     return message
 
