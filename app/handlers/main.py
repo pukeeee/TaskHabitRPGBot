@@ -52,4 +52,14 @@ async def main_process(message: Message, state: FSMContext, language_code: str):
                            reply_markup=await todoReplyKB(language_code))
 
     elif message.text == L10nMessage.get_message(language_code, "profileButton"):
-        await profileMessage(message, state, language_code)
+        tg_id = message.from_user.id
+        profile_data = await profileMessage(message, state, language_code, tg_id)
+        if profile_data:
+            await message.answer_photo(
+                photo=profile_data.photo,
+                caption=profile_data.profile_message,
+                parse_mode=ParseMode.HTML,
+                reply_markup=await profileInLineKB(language_code)
+            )
+        else:
+            await message.answer("Error loading profile")

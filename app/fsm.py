@@ -15,6 +15,7 @@ class HabitState(StatesGroup):
     editDays = State()
     editExp = State()
 
+
 class TaskState(StatesGroup):
     taskEdit = State()
     addTask = State()
@@ -23,8 +24,8 @@ class TaskState(StatesGroup):
 class UserRPG(StatesGroup):
     setName = State()
     setAvatar = State()
+    editAvatar = State()
     changeName = State()
-    changeAvatar = State()
 
 
 class Admin(StatesGroup):

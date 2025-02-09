@@ -59,6 +59,23 @@ async def avatarNavigationKB(language_code: str) -> InlineKeyboardMarkup:
 
 
 
+async def editAvatarKB(language_code: str) -> InlineKeyboardMarkup:
+    keyboard = InlineKeyboardBuilder()
+    keyboard.row(
+        InlineKeyboardButton(text = "⬅️", callback_data = "edit_prev_img"),
+        InlineKeyboardButton(text = "➡️", callback_data = "edit_next_img")
+    )
+    keyboard.row(InlineKeyboardButton(
+        text = Message.get_message(language_code, "done"),
+        callback_data = "doneEditImg"
+    ))
+    keyboard.row(
+        InlineKeyboardButton(text = Message.get_message(language_code, "backToProfileButton"), callback_data = "backToProfile")
+    )
+    return keyboard.as_markup()
+
+
+
 async def profileSettngsKB(language_code: str):
     keyboard = InlineKeyboardBuilder()
     keyboard.row(

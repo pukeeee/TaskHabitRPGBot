@@ -2,7 +2,8 @@ from .profile_kb import (
     startReplyKb,
     profileInLineKB,
     avatarNavigationKB,
-    profileSettngsKB
+    profileSettngsKB,
+    editAvatarKB
 )
 
 from .task_kb import (
@@ -39,7 +40,7 @@ __all__ = [
     'profileInLineKB',
     'avatarNavigationKB',
     'profileSettngsKB',
-    
+    'editAvatarKB',
     
     # Task keyboards
     'todoReplyKB',
