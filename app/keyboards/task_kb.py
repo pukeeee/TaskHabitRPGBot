@@ -6,7 +6,9 @@ from aiogram.types import (
 )
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from app.l10n import Message
-from database.repositories import getUncompletedTask
+from database.repositories import getUncompletedTask, getCompletedTask
+
+
 
 async def todoReplyKB(language_code: str) -> ReplyKeyboardMarkup:
     taskListButton = Message.get_message(language_code, "taskListButton")
@@ -24,6 +26,8 @@ async def todoReplyKB(language_code: str) -> ReplyKeyboardMarkup:
         resize_keyboard=True
     )
 
+
+
 async def addTaskReplyKB(language_code: str) -> ReplyKeyboardMarkup:
     backToMain = Message.get_message(language_code, "homeButton")
     backToTask = Message.get_message(language_code, "backToTaskButton")
@@ -35,6 +39,8 @@ async def addTaskReplyKB(language_code: str) -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True
     )
+
+
 
 async def taskListKB(language_code: str) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
@@ -54,6 +60,8 @@ async def taskListKB(language_code: str) -> InlineKeyboardMarkup:
     ))
     return keyboard.as_markup()
 
+
+
 async def delTasks(tg_id: int) -> InlineKeyboardMarkup:
     tasks = await getUncompletedTask(tg_id)
     keyboard = InlineKeyboardBuilder()
@@ -69,6 +77,26 @@ async def delTasks(tg_id: int) -> InlineKeyboardMarkup:
         callback_data="backToTaskList"
     ))
     return keyboard.adjust(1).as_markup()
+
+
+
+async def delCompletedTasks(tg_id: int) -> InlineKeyboardMarkup:
+    tasks = await getCompletedTask(tg_id)
+    keyboard = InlineKeyboardBuilder()
+    
+    for task in tasks:
+        keyboard.add(InlineKeyboardButton(
+            text=task.task,
+            callback_data=f"delCompletedTask_{task.id}"
+        ))
+    
+    keyboard.add(InlineKeyboardButton(
+        text="🔙 Back",
+        callback_data="backToCompletedTasksList"
+    ))
+    return keyboard.adjust(1).as_markup()
+
+
 
 async def editTasks(tg_id: int) -> InlineKeyboardMarkup:
     tasks = await getUncompletedTask(tg_id)
@@ -86,6 +114,8 @@ async def editTasks(tg_id: int) -> InlineKeyboardMarkup:
     ))
     return keyboard.adjust(1).as_markup()
 
+
+
 async def completeTasks(tg_id: int) -> InlineKeyboardMarkup:
     tasks = await getUncompletedTask(tg_id)
     keyboard = InlineKeyboardBuilder()
@@ -102,4 +132,12 @@ async def completeTasks(tg_id: int) -> InlineKeyboardMarkup:
     ))
     return keyboard.adjust(1).as_markup()
 
-# ... остальные функции для задач 
+
+
+async def completedTasksKB(language_code: str):
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=Message.get_message(language_code, "deleteTaskButton"), callback_data="deleteCompletedTasks")]
+        ]
+    )
+    return keyboard

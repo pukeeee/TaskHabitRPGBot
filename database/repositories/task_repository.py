@@ -19,6 +19,8 @@ class TaskRepository(BaseRepository):
                 return result.all()
             return []
 
+
+
     async def get_completed_tasks(self, tg_id: int) -> List[Task]:
         async with self.begin():
             user = await self.session.scalar(
@@ -32,6 +34,8 @@ class TaskRepository(BaseRepository):
                 )
                 return result.all()
             return []
+
+
 
     async def add_task(self, tg_id: int, text: str) -> bool:
         async with self.begin():
@@ -51,11 +55,15 @@ class TaskRepository(BaseRepository):
                 return True
             return False
 
+
+
     async def delete_task(self, task_id: int) -> None:
         async with self.begin():
             await self.session.execute(
                 delete(Task).where(Task.id == task_id)
             )
+
+
 
     async def edit_task(self, task_id: int, new_text: str) -> None:
         async with self.begin():
@@ -65,11 +73,15 @@ class TaskRepository(BaseRepository):
                 .values(task=new_text)
             )
 
+
+
     async def get_task_by_id(self, task_id: int) -> Optional[str]:
         async with self.begin():
             return await self.session.scalar(
                 select(Task.task).where(Task.id == task_id)
             )
+
+
 
     async def mark_completed(self, task_id: int, tg_id: int) -> None:
         async with self.begin():
@@ -111,7 +123,12 @@ class TaskRepository(BaseRepository):
                 self.session.add(new_statistic)
 
 
-# Функции-обертки для обратной совместимости
+
+################################################
+"""Функции-обертки для обратной совместимости"""
+################################################
+
+
 async def getUncompletedTask(tg_id: int) -> List[Task]:
     async with TaskRepository() as repo:
         return await repo.get_uncompleted_tasks(tg_id)

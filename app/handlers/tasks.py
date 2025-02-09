@@ -6,21 +6,17 @@ from datetime import datetime, timezone
 import random
 import os
 from app.l10n import Message
-from database.repositories import (
-    addTask,
-    deleteTask,
-    editTaskInDB,
-    getTaskById,
-    markTaskAsCompleted,
-    getUncompletedTask,
-    getCompletedTask,
-    getUserDB
+from database.repositories import (addTask, deleteTask, editTaskInDB, getTaskById,
+    markTaskAsCompleted, getUncompletedTask, getCompletedTask, getUserDB
 )
 from app.fsm import UserState, TaskState
-import app.keyboards as kb
+from app.keyboards import (startReplyKb, todoReplyKB, taskListKB, addTaskReplyKB,
+    editTasks, delTasks, completeTasks, completedTasksKB, delCompletedTasks 
+)
 
 router = Router()
 router.name = 'tasks'
+
 
 
 @router.message(UserState.todo)
@@ -30,7 +26,7 @@ async def todo_handler(message: Message, state: FSMContext, language_code: str):
         
     elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
-        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         
     elif message.text == "Statistic":
         stat = await getUserDB(message.from_user.id)
@@ -47,17 +43,17 @@ async def todo_handler(message: Message, state: FSMContext, language_code: str):
     elif message.text == Message.get_message(language_code, "addTaskButton"):
         await state.set_state(TaskState.addTask)
         await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
-                            reply_markup = await kb.addTaskReplyKB(language_code))
+                            reply_markup = await addTaskReplyKB(language_code))
         
     elif message.text == Message.get_message(language_code, "doneTasksButton"):
         text = await getCompletedTasks(language_code, message.from_user.id)
-        await message.answer(text)
+        await message.answer(text, reply_markup = await completedTasksKB(language_code))
 
 
 
 async def taskList(message: Message, language_code: str):
     taskListMessage = await getUncompletedTasks(language_code, message.from_user.id)
-    await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
+    await message.answer(taskListMessage, reply_markup = await taskListKB(language_code))
 
 
 
@@ -95,7 +91,7 @@ async def getCompletedTasks(language_code: str, tg_id):
 @router.callback_query(F.data == "editTasks")
 async def editTaskList(callback: CallbackQuery, state: FSMContext, language_code: str):
     await callback.message.edit_text(text = Message.get_message(language_code, "editTask"),
-                                    reply_markup = await kb.editTasks(callback.from_user.id))
+                                    reply_markup = await editTasks(callback.from_user.id))
     await callback.answer()
 
 
@@ -103,7 +99,7 @@ async def editTaskList(callback: CallbackQuery, state: FSMContext, language_code
 @router.callback_query(F.data == "deleteTasks")
 async def deleteTaskList(callback: CallbackQuery, state: FSMContext, language_code: str):
     await callback.message.edit_text(text = Message.get_message(language_code, "deleteTask"),
-                                    reply_markup = await kb.delTasks(callback.from_user.id))
+                                    reply_markup = await delTasks(callback.from_user.id))
     await callback.answer()
 
 
@@ -111,7 +107,7 @@ async def deleteTaskList(callback: CallbackQuery, state: FSMContext, language_co
 @router.callback_query(F.data == "completeTasks")
 async def completeTasks(callback: CallbackQuery, state: FSMContext, language_code: str):
     await callback.message.edit_text(text = Message.get_message(language_code, "completeTasks"),
-                                    reply_markup = await kb.completeTasks(callback.from_user.id))
+                                    reply_markup = await completeTasks(callback.from_user.id))
     await callback.answer()
 
 
@@ -120,12 +116,12 @@ async def completeTasks(callback: CallbackQuery, state: FSMContext, language_cod
 async def addTask_handler(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
-        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
 
     elif message.text == Message.get_message(language_code, "backToTaskButton"):
         await state.set_state(UserState.todo)
         await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, 
-                            reply_markup = await kb.todoReplyKB(language_code))
+                            reply_markup = await todoReplyKB(language_code))
     
     elif message.text.startswith("/"):
         return
@@ -143,12 +139,20 @@ async def addTask_handler(message: Message, state: FSMContext, language_code: st
                 await message.answer(Message.get_message(language_code, "addTask"))
 
 
+
 @router.callback_query(F.data.startswith("deltask_"))
 async def delete_task(callback: CallbackQuery, language_code: str):
-
     await deleteTask(callback.data.split("_")[1])
     await callback.message.edit_text(text = Message.get_message(language_code, "deleteTask"),
-                                    reply_markup = await kb.delTasks(callback.from_user.id))
+                                    reply_markup = await delTasks(callback.from_user.id))
+
+
+
+@router.callback_query(F.data.startswith("delCompletedTask_"))
+async def delete_completed_task(callback: CallbackQuery, language_code: str):
+    await deleteTask(callback.data.split("_")[1])
+    await callback.message.edit_text(text = Message.get_message(language_code, "deleteTask"),
+                                    reply_markup = await delCompletedTasks(callback.from_user.id))
 
 
 
@@ -168,32 +172,34 @@ async def delete_task(callback: CallbackQuery, language_code: str):
     await callback.answer(Message.get_message(language_code, "taskCompleted"))
     await markTaskAsCompleted(callback.data.split("_")[1], callback.from_user.id)
     await callback.message.edit_text(text = Message.get_message(language_code, "completeTasks"),
-                                    reply_markup = await kb.completeTasks(callback.from_user.id))
+                                    reply_markup = await completeTasks(callback.from_user.id))
+
 
 
 @router.callback_query(F.data == "backToTaskList")
 async def backToTaskList_handler(callback: CallbackQuery, language_code: str):
     taskListMessage = await getUncompletedTasks(language_code, callback.from_user.id)
-    await callback.message.edit_text(text = taskListMessage, reply_markup = await kb.taskListKB(language_code))
+    await callback.message.edit_text(text = taskListMessage, reply_markup = await taskListKB(language_code))
     await callback.answer()
+
 
 
 async def todo_exception(message, state, language_code):
     if message.text == Message.get_message(language_code, "taskListButton"):
-        await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await kb.delTasks(message.from_user.id))
+        await message.answer(Message.get_message(language_code, "taskslist"), reply_markup = await delTasks(message.from_user.id))
         await state.set_state(UserState.todo)
         return True
     
     elif message.text == Message.get_message(language_code, "homeButton"):
         await state.set_state(UserState.startMenu)
-        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await kb.startReplyKb(language_code))
+        await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         await state.set_state(UserState.todo)
         return True
     
     elif message.text == Message.get_message(language_code, "addTaskButton"):
         await state.set_state(TaskState.addTask)
         await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
-                            reply_markup = await kb.addTaskReplyKB(language_code))
+                            reply_markup = await addTaskReplyKB(language_code))
         return True
     
     elif message.text == Message.get_message(language_code, "doneTasksButton"):
@@ -220,7 +226,20 @@ async def editTask(message: Message, state: FSMContext, language_code: str):
         await state.set_state(UserState.todo)
 
         taskListMessage = await getUncompletedTasks(language_code, message.from_user.id)
-        await message.answer(taskListMessage, reply_markup = await kb.taskListKB(language_code))
+        await message.answer(taskListMessage, reply_markup = await taskListKB(language_code))
 
 
 
+@router.callback_query(F.data == "deleteCompletedTasks")
+async def deleteCompletedTasks(callback: CallbackQuery, language_code: str):
+    await callback.message.edit_text(text = Message.get_message(language_code, "deleteCompletedTasks"),
+                                    reply_markup = await delCompletedTasks(callback.from_user.id))
+    await callback.answer()
+
+
+
+@router.callback_query(F.data == "backToCompletedTasksList")
+async def backToCompletedTasksList(callback: CallbackQuery, language_code: str):
+    text = await getCompletedTasks(language_code, callback.from_user.id)
+    await callback.message.edit_text(text = text, reply_markup = await completedTasksKB(language_code))
+    await callback.answer()

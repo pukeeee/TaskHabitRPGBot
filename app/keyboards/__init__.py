@@ -11,7 +11,9 @@ from .task_kb import (
     taskListKB,
     delTasks,
     editTasks,
-    completeTasks
+    completeTasks,
+    completedTasksKB,
+    delCompletedTasks
 )
 
 from .habit_kb import (
@@ -37,6 +39,8 @@ __all__ = [
     'profileInLineKB',
     'avatarNavigationKB',
     'profileSettngsKB',
+    
+    
     # Task keyboards
     'todoReplyKB',
     'addTaskReplyKB',
@@ -44,6 +48,8 @@ __all__ = [
     'delTasks',
     'editTasks',
     'completeTasks',
+    'completedTasksKB',
+    'delCompletedTasks',
     
     # Habit keyboards
     'habitsReplyKB',
@@ -53,6 +59,7 @@ __all__ = [
     'editHabits',
     'selectWeekdaysKB',
     'todayHabits',
+    
     
     # Admin keyboards
     'adminKb',
