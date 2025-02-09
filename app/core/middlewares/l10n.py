@@ -3,6 +3,8 @@ from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 from app.l10n import SUPPORTED_LOCALES, DEFAULT_LOCALE
 
+
+
 class LanguageMiddleware(BaseMiddleware):
     async def __call__(
         self,

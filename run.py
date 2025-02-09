@@ -4,14 +4,15 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis 
-from app.middlewares import LanguageMiddleware
+from app.core.middlewares import LanguageMiddleware
 from database.models import async_main
 from app.handlers import (
     main_router,
     profile_router,
     task_router,
     habit_router,
-    commands_router
+    commands_router,
+    admin_router
 )
 from config import TOKEN
 
@@ -38,7 +39,8 @@ async def main():
         main_router,
         profile_router,
         task_router,
-        habit_router
+        habit_router,
+        admin_router
     )
 
     await dp.start_polling(bot)

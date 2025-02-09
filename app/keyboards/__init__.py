@@ -1,7 +1,8 @@
 from .profile_kb import (
     startReplyKb,
     profileInLineKB,
-    avatarNavigationKB
+    avatarNavigationKB,
+    profileSettngsKB
 )
 
 from .task_kb import (
@@ -23,12 +24,19 @@ from .habit_kb import (
     todayHabits
 )
 
+from .admin_kb import (
+    adminKb,
+    broadcastTypeKeyboard,
+    checkBroadcastKeyboard
+)
+
+
 __all__ = [
     # Profile keyboards
     'startReplyKb',
     'profileInLineKB',
     'avatarNavigationKB',
-    
+    'profileSettngsKB',
     # Task keyboards
     'todoReplyKB',
     'addTaskReplyKB',
@@ -44,5 +52,10 @@ __all__ = [
     'deleteHabits',
     'editHabits',
     'selectWeekdaysKB',
-    'todayHabits'
+    'todayHabits',
+    
+    # Admin keyboards
+    'adminKb',
+    'broadcastTypeKeyboard',
+    'checkBroadcastKeyboard'
 ] 

@@ -1,14 +1,16 @@
-from .base import (
+from aiogram.types import (
     ReplyKeyboardMarkup,
     KeyboardButton,
     InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    InlineKeyboardBuilder
+    InlineKeyboardButton
 )
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from app.l10n import Message
 import os
 import html
 from config import IMG_FOLDER
+
+
 
 async def startReplyKb(language_code: str) -> ReplyKeyboardMarkup:
     todoButton = Message.get_message(language_code, "taskTrackerButton")
@@ -17,10 +19,10 @@ async def startReplyKb(language_code: str) -> ReplyKeyboardMarkup:
     
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=todoButton), KeyboardButton(text=habitButton)],
-            [KeyboardButton(text=profile)]
+            [KeyboardButton(text = todoButton), KeyboardButton(text = habitButton)],
+            [KeyboardButton(text = profile)]
         ],
-        resize_keyboard=True
+        resize_keyboard = True
     )
 
 
@@ -29,32 +31,50 @@ async def profileInLineKB(language_code: str) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     keyboard.row(
         InlineKeyboardButton(
-            text=Message.get_message(language_code, "leaderboardButton"),
-            callback_data="leaderboard"
+            text = Message.get_message(language_code, "leaderboardButton"),
+            callback_data = "leaderboard"
         )
     )
     keyboard.row(
         InlineKeyboardButton(
-            text=Message.get_message(language_code, "changeCharacterButton"),
-            callback_data="changeAvatar"
-        ),
-        InlineKeyboardButton(
-            text=Message.get_message(language_code, "changeNameButton"),
-            callback_data="changeName"
+            text = Message.get_message(language_code, "profileSettingsButton"),
+            callback_data = "profileSettings"
         )
     )
     return keyboard.as_markup()
+
+
 
 async def avatarNavigationKB(language_code: str) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
     keyboard.row(
-        InlineKeyboardButton(text="⬅️", callback_data="prev_img"),
-        InlineKeyboardButton(text="➡️", callback_data="next_img")
+        InlineKeyboardButton(text = "⬅️", callback_data = "prev_img"),
+        InlineKeyboardButton(text = "➡️", callback_data = "next_img")
     )
     keyboard.row(InlineKeyboardButton(
-        text=Message.get_message(language_code, "done"),
-        callback_data="done_img"
+        text = Message.get_message(language_code, "done"),
+        callback_data = "done_img"
     ))
     return keyboard.as_markup()
 
-# ... остальные функции для профиля 
+
+
+async def profileSettngsKB(language_code: str):
+    keyboard = InlineKeyboardBuilder()
+    keyboard.row(
+        InlineKeyboardButton(
+            text = Message.get_message(language_code, "changeNameButton"),
+            callback_data="changeName"
+        ),
+        InlineKeyboardButton(
+            text = Message.get_message(language_code, "changeAvatarButton"),
+            callback_data="changeAvatar"
+        )
+    )
+    keyboard.row(
+        InlineKeyboardButton(
+            text = Message.get_message(language_code, "backToProfileButton"),
+            callback_data="backToProfile"
+        )
+    )
+    return keyboard.as_markup()

@@ -4,8 +4,10 @@ from .profile_repository import (
     changeNameDB,
     saveUserCharacter,
     getProfileDB,
-    getLeaderboard
+    getLeaderboard,
+    get_all_active_users
 )
+
 
 from .task_repository import (
     addTask,
@@ -16,6 +18,7 @@ from .task_repository import (
     getUncompletedTask,
     getCompletedTask
 )
+
 
 from .habit_repository import (
     addHabit,
@@ -28,6 +31,8 @@ from .habit_repository import (
     resetHabit
 )
 
+
+
 __all__ = [
     # Profile
     'setUser',
@@ -36,6 +41,8 @@ __all__ = [
     'saveUserCharacter',
     'getProfileDB',
     'getLeaderboard',
+    'get_all_active_users',
+    
     
     # Task
     'addTask',
@@ -45,6 +52,7 @@ __all__ = [
     'markTaskAsCompleted',
     'getUncompletedTask',
     'getCompletedTask',
+    
     
     # Habit
     'addHabit',

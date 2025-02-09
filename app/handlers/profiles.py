@@ -6,6 +6,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 import random
 import os
+from config import LEVEL
 from app.l10n import Message as L10nMessage
 from database.repositories import (
     setUser,
@@ -20,7 +21,8 @@ from validators import emoji_specSign, letters, compiled_patterns
 from app.keyboards import (
     startReplyKb,
     profileInLineKB,
-    avatarNavigationKB
+    avatarNavigationKB,
+    profileSettngsKB
 )
 from config import IMG_FOLDER
 from PIL import Image
@@ -300,7 +302,7 @@ async def changeAvatar_handler(callback: CallbackQuery, state: FSMContext, langu
 @router.callback_query(F.data == "leaderboard")
 async def leaderboardMessage(callback: CallbackQuery, state: FSMContext, language_code: str):
     leaderboard = await generateLeaderboard()
-    await callback.message.answer(leaderboard, parse_mode=ParseMode.HTML)
+    await callback.message.answer(leaderboard, parse_mode = ParseMode.HTML)
 
 
 
@@ -322,14 +324,14 @@ async def profileMessage(message: Message, state: FSMContext, language_code: str
     experience = user.experience
 
     # Определяем префикс для аватара в зависимости от уровня
-    if level >= 50:
-        avatar_prefix = "50"
-    elif level >= 25:
-        avatar_prefix = "25"
-    elif level >= 10:
-        avatar_prefix = "10"
+    if level >= LEVEL[4]:
+        avatar_prefix = str(LEVEL[4])
+    elif level >= LEVEL[3]:
+        avatar_prefix = str(LEVEL[3])
+    elif level >= LEVEL[2]:
+        avatar_prefix = str(LEVEL[2])
     else:
-        avatar_prefix = "1"
+        avatar_prefix = str(LEVEL[1])
 
     # Получаем имя файла аватара из БД
     db_avatar = profile.avatar
@@ -368,3 +370,21 @@ async def profileMessage(message: Message, state: FSMContext, language_code: str
     except Exception as e:
         print(f"Error loading avatar: {avatar_file}")
         print(f"Error details: {e}")
+
+
+
+@router.callback_query(F.data == "profileSettings")
+async def profileSettings(callback: CallbackQuery, state: FSMContext, language_code: str):
+    await callback.message.edit_reply_markup(
+        reply_markup = await profileSettngsKB(language_code)
+    )
+    await callback.answer()
+
+
+
+@router.callback_query(F.data == "backToProfile")
+async def backToProfile(callback: CallbackQuery, state: FSMContext, language_code: str):
+    await callback.message.edit_reply_markup(
+        reply_markup = await profileInLineKB(language_code)
+    )
+    await callback.answer()

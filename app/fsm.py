@@ -25,3 +25,10 @@ class UserRPG(StatesGroup):
     setAvatar = State()
     changeName = State()
     changeAvatar = State()
+
+
+class Admin(StatesGroup):
+    admin = State()
+    broadcast = State()
+    broadcast_text = State()
+    broadcast_pic = State()

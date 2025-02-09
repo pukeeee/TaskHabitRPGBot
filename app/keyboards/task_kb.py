@@ -1,10 +1,10 @@
-from .base import (
+from aiogram.types import (
     ReplyKeyboardMarkup,
     KeyboardButton,
     InlineKeyboardMarkup,
-    InlineKeyboardButton,
-    InlineKeyboardBuilder
+    InlineKeyboardButton
 )
+from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from app.l10n import Message
 from database.repositories import getUncompletedTask
 

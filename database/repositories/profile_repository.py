@@ -16,11 +16,15 @@ class ProfileRepository(BaseRepository):
                 self.session.add(user)
             return user
 
+
+
     async def get_user(self, tg_id: int) -> Optional[User]:
         async with self.begin():
             return await self.session.scalar(
                 select(User).where(User.tg_id == tg_id)
             )
+
+
 
     async def get_profile(self, tg_id: int) -> Optional[Profile]:
         async with self.begin():
@@ -31,6 +35,8 @@ class ProfileRepository(BaseRepository):
                 )
             return None
 
+
+
     async def change_name(self, tg_id: int, new_name: str) -> None:
         async with self.begin():
             user = await self.get_user(tg_id)
@@ -40,6 +46,8 @@ class ProfileRepository(BaseRepository):
                     .where(Profile.user == user.id)
                     .values(user_name=new_name)
                 )
+
+
 
     async def save_character(self, tg_id: int, user_name: str, avatar: str) -> None:
         async with self.begin():
@@ -66,6 +74,8 @@ class ProfileRepository(BaseRepository):
                     self.session.add(new_profile)
                     print(f"Created new profile - user_name: {user_name}, avatar: {avatar_name}")
 
+
+
     async def get_leaderboard(self) -> List[Tuple[str, int]]:
         async with self.begin():
             result = await self.session.execute(
@@ -75,9 +85,22 @@ class ProfileRepository(BaseRepository):
                 .limit(10)
             )
             return result.all()
+    
+    
+    
+    async def get_all_active_users(self) -> List[int]:
+        async with self.begin():
+            result = await self.session.execute(
+                select(User.tg_id).where(User.is_active == True)
+            )
+            return result.scalars().all()
 
 
-# Функции-обертки для обратной совместимости
+
+################################################
+"""Функции-обертки для обратной совместимости"""
+################################################
+
 async def setUser(tg_id: int) -> Optional[User]:
     async with ProfileRepository() as repo:
         return await repo.set_user(tg_id)
@@ -100,4 +123,8 @@ async def saveUserCharacter(tg_id: int, user_name: str, avatar: str) -> None:
 
 async def getLeaderboard() -> List[Tuple[str, int]]:
     async with ProfileRepository() as repo:
-        return await repo.get_leaderboard() 
+        return await repo.get_leaderboard()
+
+async def get_all_active_users() -> List[int]:
+    async with ProfileRepository() as repo:
+        return await repo.get_all_active_users()

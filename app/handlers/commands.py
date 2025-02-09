@@ -1,11 +1,8 @@
 from aiogram import Router, F, types
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from aiogram.types.input_file import FSInputFile
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
-import random
-import os
 from app.l10n import Message as L10nMessage
 from database.repositories import (
     setUser,
@@ -13,11 +10,11 @@ from database.repositories import (
     getProfileDB,
     resetHabit
 )
-from app.fsm import UserState, UserRPG
+from app.fsm import UserState, UserRPG, Admin
 from app.keyboards import (
-    startReplyKb
+    startReplyKb, adminKb
 )
-from config import IMG_FOLDER
+
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
@@ -124,3 +121,13 @@ async def info_message(message: Message, state: FSMContext, language_code: str):
         await message.answer(L10nMessage.get_message(language_code, "homeInfo"))
     elif current_state == UserState.habits.state:
         await message.answer(L10nMessage.get_message(language_code, "habitTrackerInfo"))
+
+
+
+@router.message(Command("admin"))
+async def admin_command(message: Message, state: FSMContext):
+    if message.from_user.id == 514373294:
+        await state.set_state(Admin.admin)
+        await message.answer("Admin panel", reply_markup = await adminKb())
+    else:
+        pass
