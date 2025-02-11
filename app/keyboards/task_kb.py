@@ -116,7 +116,7 @@ async def editTasks(tg_id: int) -> InlineKeyboardMarkup:
 
 
 
-async def completeTasks(tg_id: int) -> InlineKeyboardMarkup:
+async def completeTasksKB(tg_id: int) -> InlineKeyboardMarkup:
     tasks = await getUncompletedTask(tg_id)
     keyboard = InlineKeyboardBuilder()
     

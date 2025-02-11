@@ -12,7 +12,7 @@ from .task_kb import (
     taskListKB,
     delTasks,
     editTasks,
-    completeTasks,
+    completeTasksKB,
     completedTasksKB,
     delCompletedTasks
 )
@@ -33,6 +33,9 @@ from .admin_kb import (
     checkBroadcastKeyboard
 )
 
+from .subscription_kb import (
+    subscriptionKeyboard
+)
 
 __all__ = [
     # Profile keyboards
@@ -48,7 +51,7 @@ __all__ = [
     'taskListKB',
     'delTasks',
     'editTasks',
-    'completeTasks',
+    'completeTasksKB',
     'completedTasksKB',
     'delCompletedTasks',
     
@@ -65,5 +68,9 @@ __all__ = [
     # Admin keyboards
     'adminKb',
     'broadcastTypeKeyboard',
-    'checkBroadcastKeyboard'
+    'checkBroadcastKeyboard',
+    
+    
+    # Subscription keyboards
+    'subscriptionKeyboard'
 ] 

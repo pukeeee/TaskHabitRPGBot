@@ -3,7 +3,6 @@ from .profile_repository import (
     getUserDB,
     changeNameDB,
     saveUserCharacter,
-    getProfileDB,
     getLeaderboard,
     get_all_active_users
 )
@@ -39,7 +38,6 @@ __all__ = [
     'getUserDB',
     'changeNameDB',
     'saveUserCharacter',
-    'getProfileDB',
     'getLeaderboard',
     'get_all_active_users',
     
