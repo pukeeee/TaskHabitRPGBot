@@ -1,8 +1,10 @@
 from database.repository import BaseRepository
-from database.models import User, Profile, Statistic
+from database.models import User, Statistic
 from sqlalchemy import select, update, delete, desc, and_, func
 import time
 from typing import Optional, List, Tuple
+
+
 
 class ProfileRepository(BaseRepository):
     async def set_user(self, tg_id: int) -> Optional[User]:
@@ -26,61 +28,56 @@ class ProfileRepository(BaseRepository):
 
 
 
-    async def get_profile(self, tg_id: int) -> Optional[Profile]:
-        async with self.begin():
-            user = await self.get_user(tg_id)
-            if user:
-                return await self.session.scalar(
-                    select(Profile).where(Profile.user == user.id)
-                )
-            return None
-
-
-
     async def change_name(self, tg_id: int, new_name: str) -> None:
         async with self.begin():
-            user = await self.get_user(tg_id)
-            if user:
-                await self.session.execute(
-                    update(Profile)
-                    .where(Profile.user == user.id)
-                    .values(user_name=new_name)
-                )
+            await self.session.execute(
+                update(User)
+                .where(User.tg_id == tg_id)
+                .values(user_name=new_name)
+            )
 
 
 
     async def save_character(self, tg_id: int, user_name: str, avatar: str) -> None:
         async with self.begin():
-            # Убираем префикс из имени файла аватара, но сохраняем расширение
-            # (например, "1_Dark Knight.png" -> "Dark Knight.png")
+            # Убираем префикс, расширение .png и лишние пробелы из имени файла
             avatar_name = avatar.split('_', 1)[1] if '_' in avatar else avatar
-            print(f"Saving to DB - original avatar: {avatar}, cleaned avatar: {avatar_name}")
+            avatar_name = avatar_name.strip()  # Убираем пробелы в начале и конце
+            if avatar_name.endswith('.png'):
+                avatar_name = avatar_name[:-4]  # Убираем .png из конца строки
             
-            user = await self.get_user(tg_id)
+            # Проверяем существует ли пользователь
+            user = await self.session.scalar(
+                select(User).where(User.tg_id == tg_id)
+            )
+            
             if user:
-                profile = await self.session.scalar(
-                    select(Profile).where(Profile.user == user.id)
-                )
-                if profile:
-                    profile.user_name = user_name
-                    profile.avatar = avatar_name
-                    print(f"Updated profile - user_name: {profile.user_name}, avatar: {profile.avatar}")
-                else:
-                    new_profile = Profile(
-                        user=user.id,
+                # Если пользователь существует - обновляем
+                await self.session.execute(
+                    update(User)
+                    .where(User.tg_id == tg_id)
+                    .values(
                         user_name=user_name,
                         avatar=avatar_name
                     )
-                    self.session.add(new_profile)
-                    print(f"Created new profile - user_name: {user_name}, avatar: {avatar_name}")
+                )
+            else:
+                # Если пользователя нет - создаем
+                unix_time = int(time.time())
+                new_user = User(
+                    tg_id=tg_id,
+                    start_date=unix_time,
+                    user_name=user_name,
+                    avatar=avatar_name
+                )
+                self.session.add(new_user)
 
 
 
     async def get_leaderboard(self) -> List[Tuple[str, int]]:
         async with self.begin():
             result = await self.session.execute(
-                select(Profile.user_name, User.experience)
-                .join(User, Profile.user == User.id)
+                select(User.user_name, User.experience)
                 .order_by(desc(User.experience))
                 .limit(10)
             )
@@ -108,10 +105,6 @@ async def setUser(tg_id: int) -> Optional[User]:
 async def getUserDB(tg_id: int) -> Optional[User]:
     async with ProfileRepository() as repo:
         return await repo.get_user(tg_id)
-
-async def getProfileDB(tg_id: int) -> Optional[Profile]:
-    async with ProfileRepository() as repo:
-        return await repo.get_profile(tg_id)
 
 async def changeNameDB(tg_id: int, new_name: str) -> None:
     async with ProfileRepository() as repo:

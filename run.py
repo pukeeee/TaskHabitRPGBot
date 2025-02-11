@@ -4,7 +4,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis 
-from app.core.middlewares import LanguageMiddleware
+from app.core.middlewares import LanguageMiddleware, RateLimitMiddleware, SubscriptionMiddleware
 from database.models import async_main
 from app.handlers import (
     main_router,
@@ -12,7 +12,8 @@ from app.handlers import (
     task_router,
     habit_router,
     commands_router,
-    admin_router
+    admin_router,
+    subscription_router
 )
 from config import TOKEN
 
@@ -32,6 +33,10 @@ async def main():
     # Подключаем middleware
     dp.message.middleware(LanguageMiddleware())
     dp.callback_query.middleware(LanguageMiddleware())
+    dp.message.middleware(RateLimitMiddleware(redis))
+    dp.callback_query.middleware(RateLimitMiddleware(redis))
+    dp.message.middleware(SubscriptionMiddleware())
+    dp.callback_query.middleware(SubscriptionMiddleware())
     
     # Подключаем все роутеры
     dp.include_routers(
@@ -40,7 +45,8 @@ async def main():
         profile_router,
         task_router,
         habit_router,
-        admin_router
+        admin_router,
+        subscription_router
     )
 
     await dp.start_polling(bot)

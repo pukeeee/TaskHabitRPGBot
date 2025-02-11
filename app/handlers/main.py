@@ -19,8 +19,8 @@ from database.repositories import (
     editTaskInDB,
     markHabitAsCompleted,
     changeNameDB,
-    getProfileDB,
-    resetHabit
+    saveUserCharacter,
+    getLeaderboard
 )
 from app.fsm import UserState, HabitState, TaskState, UserRPG
 from app.keyboards import (

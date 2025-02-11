@@ -13,7 +13,6 @@ from database.repositories import (
     getUserDB,
     changeNameDB,
     saveUserCharacter,
-    getProfileDB,
     getLeaderboard
 )
 from app.fsm import UserState, UserRPG
@@ -93,22 +92,23 @@ async def setAvatar(message: Message, state: FSMContext, language_code: str):
         
         current_index = random.randint(0, len(img_files) - 1)
         selected_file = img_files[current_index]
-        photo_path = os.path.join(IMG_FOLDER, img_files[current_index])
+        photo_path = os.path.join(IMG_FOLDER, selected_file)
         
         if not os.path.isfile(photo_path):
             print(f"File not found: {photo_path}")
             await message.answer("Error: Image file not found")
             return
         
+        # Сразу сохраняем первую картинку в состояние
         await state.update_data(
             img_files=img_files,
-            current_index=current_index
+            current_index=current_index,
+            selected_img=selected_file  # Добавляем выбранный файл в состояние
         )
         
         photo = await load_image(photo_path)
         character_name = selected_file.split('_', 1)[1].replace('.png', '')
         
-        # Для нового пользователя всегда отправляем новое сообщение
         await message.answer_photo(
             photo=photo,
             caption=f"👾 {character_name}\n{current_index + 1} / {len(img_files)}",
@@ -121,98 +121,37 @@ async def setAvatar(message: Message, state: FSMContext, language_code: str):
 
 
 
-async def send_avatar(callback: CallbackQuery, img_files: list, current_index: int,
-                     state: FSMContext, language_code: str):
-    photo_path = os.path.join(IMG_FOLDER, img_files[current_index])
-    photo = await load_image(photo_path)
+@router.callback_query(F.data.in_(["next_img", "prev_img", "edit_next_img", "edit_prev_img"]))
+async def navigate_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
+    data = await state.get_data()
+    img_files = data.get('img_files', [])
+    current_index = data.get('current_index', 0)
     
-    character_name = img_files[current_index].split('_', 1)[1].replace('.png', '')
+    if "next" in callback.data:
+        current_index = (current_index + 1) % len(img_files)
+    else:
+        current_index = (current_index - 1) % len(img_files)
     
-    media = types.InputMediaPhoto(
-        media=photo,
-        caption=f"👾 {character_name}\n{current_index + 1} / {len(img_files)}"
+    selected_file = img_files[current_index]
+    photo_path = os.path.join(IMG_FOLDER, selected_file)
+    
+    # Сохраняем текущую картинку в состояние при каждой навигации
+    await state.update_data(
+        current_index=current_index,
+        selected_img=selected_file
     )
     
-    current_file = img_files[current_index]
-    await state.update_data(selected_img=current_file)
+    photo = await load_image(photo_path)
+    character_name = selected_file.split('_', 1)[1].replace('.png', '')
     
     await callback.message.edit_media(
-        media=media,
-        reply_markup=await avatarNavigationKB(language_code)
-    )
-
-
-
-async def sendEditAvatar(callback: CallbackQuery, img_files: list, current_index: int,
-                     state: FSMContext, language_code: str):
-    photo_path = os.path.join(IMG_FOLDER, img_files[current_index])
-    photo = await load_image(photo_path)
-    
-    character_name = img_files[current_index].split('_', 1)[1].replace('.png', '')
-    
-    media = types.InputMediaPhoto(
-        media=photo,
-        caption=f"👾 {character_name}\n{current_index + 1} / {len(img_files)}"
+        media=types.InputMediaPhoto(
+            media=photo,
+            caption=f"👾 {character_name}\n{current_index + 1} / {len(img_files)}"
+        ),
+        reply_markup=await avatarNavigationKB(language_code) if "edit" not in callback.data else await editAvatarKB(language_code)
     )
     
-    current_file = img_files[current_index]
-    await state.update_data(selected_img=current_file)
-    
-    await callback.message.edit_media(
-        media=media,
-        reply_markup=await editAvatarKB(language_code)
-    )
-
-
-
-@router.callback_query(F.data == "prev_img")
-async def prev_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
-    data = await state.get_data()
-    img_files = data.get('img_files', [])
-    current_index = data.get('current_index', 0)
-
-    current_index = (current_index - 1) % len(img_files)
-    await state.update_data(current_index=current_index)
-    await send_avatar(callback, img_files, current_index, state, language_code)
-    await callback.answer()
-
-
-
-@router.callback_query(F.data == "next_img")
-async def next_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
-    data = await state.get_data()
-    img_files = data.get('img_files', [])
-    current_index = data.get('current_index', 0)
-
-    current_index = (current_index + 1) % len(img_files)
-    await state.update_data(current_index=current_index)
-    await send_avatar(callback, img_files, current_index, state, language_code)
-    await callback.answer()
-
-
-
-@router.callback_query(F.data == "edit_prev_img")
-async def edit_prev_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
-    data = await state.get_data()
-    img_files = data.get('img_files', [])
-    current_index = data.get('current_index', 0)
-
-    current_index = (current_index - 1) % len(img_files)
-    await state.update_data(current_index=current_index)
-    await sendEditAvatar(callback, img_files, current_index, state, language_code)
-    await callback.answer()
-
-
-
-@router.callback_query(F.data == "edit_next_img")
-async def edit_next_avatar(callback: CallbackQuery, state: FSMContext, language_code: str):
-    data = await state.get_data()
-    img_files = data.get('img_files', [])
-    current_index = data.get('current_index', 0)
-
-    current_index = (current_index + 1) % len(img_files)
-    await state.update_data(current_index=current_index)
-    await sendEditAvatar(callback, img_files, current_index, state, language_code)
     await callback.answer()
 
 
@@ -234,12 +173,11 @@ async def doneAvatar(callback: CallbackQuery, state: FSMContext, language_code: 
         if is_new_user:
             user_name = data.get('new_name', '')
         else:
-            # Для существующего пользователя берем текущее имя
-            profile = await getProfileDB(callback.from_user.id)
-            if not profile:
+            user = await getUserDB(callback.from_user.id)
+            if not user:
                 await callback.answer("Error: Profile not found")
                 return False
-            user_name = profile.user_name
+            user_name = user.user_name
             
         await saveUserCharacter(
             tg_id=callback.from_user.id,
@@ -278,10 +216,9 @@ async def doneNewAvatar(callback: CallbackQuery, state: FSMContext, language_cod
         await state.clear()
         await state.set_state(UserState.startMenu)
     else:
-        await callback.message.edit_caption(
-            caption="Error saving character",
-            reply_markup=await avatarNavigationKB(language_code)
-        )
+        # Просто показываем всплывающее уведомление об ошибке
+        await callback.answer("Error saving character")
+    
     await callback.answer()
 
 
@@ -304,9 +241,8 @@ async def doneEditAvatar(callback: CallbackQuery, state: FSMContext, language_co
             )
         await state.clear()
         await state.set_state(UserState.startMenu)
-        await callback.answer("Avatar updated successfully!")
+        await callback.answer("Avatar updated successfully!✅")
     else:
-        await callback.message.answer("Error saving avatar")
         await callback.answer()
 
 
@@ -370,26 +306,26 @@ async def name_validation(new_name: str, language_code: str) -> tuple[bool, str]
 
 
 @router.callback_query(F.data == "changeAvatar")
-async def changeAvatar_handler(callback: CallbackQuery, state: FSMContext, language_code: str):
-    """Обработчик для изменения аватара"""
-    # Устанавливаем состояние редактирования аватара
-    await state.set_state(UserRPG.editAvatar)
-    
+async def editAvatar(callback: CallbackQuery, state: FSMContext, language_code: str):
     try:
         img_files = [f for f in os.listdir(IMG_FOLDER) if f.startswith('1_') and f.endswith('.png')]
         if not img_files:
-            await callback.message.answer("No avatars found!")
+            await callback.answer("No avatars found!")
             return
         
         current_index = random.randint(0, len(img_files) - 1)
+        selected_file = img_files[current_index]
+        photo_path = os.path.join(IMG_FOLDER, selected_file)
+        
+        # Сразу сохраняем первую картинку в состояние
         await state.update_data(
             img_files=img_files,
-            current_index=current_index
+            current_index=current_index,
+            selected_img=selected_file
         )
         
-        photo_path = os.path.join(IMG_FOLDER, img_files[current_index])
         photo = await load_image(photo_path)
-        character_name = img_files[current_index].split('_', 1)[1].replace('.png', '')
+        character_name = selected_file.split('_', 1)[1].replace('.png', '')
         
         await callback.message.edit_media(
             media=types.InputMediaPhoto(
@@ -398,23 +334,21 @@ async def changeAvatar_handler(callback: CallbackQuery, state: FSMContext, langu
             ),
             reply_markup=await editAvatarKB(language_code)
         )
+        await state.set_state(UserRPG.editAvatar)
         
     except Exception as e:
-        print(f"Error in change_avatar: {e}")
-        await callback.message.answer("Error: Cannot process avatar selection")
-    
-    await callback.answer()
+        print(f"Error in editAvatar: {e}")
+        await callback.answer("Error: Cannot process avatar selection")
 
 
 
 @router.callback_query(F.data == "leaderboard")
 async def leaderboardMessage(callback: CallbackQuery, state: FSMContext, language_code: str):
     leaderboard = await generateLeaderboard()
-    # Вместо отправки нового сообщения редактируем текущее
-    await callback.message.edit_caption(
-        caption=leaderboard,
-        parse_mode=ParseMode.HTML,
-        reply_markup=await profileInLineKB(language_code)  # Добавляем кнопку возврата
+    # Отправляем новое сообщение в чат
+    await callback.message.answer(
+        text=leaderboard,
+        parse_mode=ParseMode.HTML
     )
 
 
@@ -430,9 +364,12 @@ async def generateLeaderboard():
 
 async def profileMessage(message: Message, state: FSMContext, language_code: str, tg_id: int):
     user = await getUserDB(tg_id)
-    profile = await getProfileDB(tg_id)
+    if not user:
+        user = await setUser(tg_id)
+        if not user:
+            return None
     
-    user_name = profile.user_name
+    user_name = user.user_name
     level = (user.experience // 1000) + 1
     experience = user.experience
 
@@ -447,24 +384,20 @@ async def profileMessage(message: Message, state: FSMContext, language_code: str
         avatar_prefix = str(LEVEL[1])
 
     # Получаем имя файла аватара из БД
-    db_avatar = profile.avatar
-    # Добавляем расширение .png, если его нет
+    db_avatar = user.avatar if user.avatar else ""
     if not db_avatar.endswith('.png'):
         db_avatar += '.png'
     
-    # Формируем имя файла с префиксом уровня
+    # Формируем путь к файлу аватара
     avatar_filename = f"{avatar_prefix}_{db_avatar}"
-    
-    # Полный путь к файлу аватара
     avatar_file = os.path.join(IMG_FOLDER, avatar_filename)
     
-    print(f"Loading avatar: {avatar_file}")  # Для отладки
-    
-    # Проверяем существование файла
+    # Если файл не найден, пробуем использовать аватар первого уровня
     if not os.path.isfile(avatar_file):
-        print(f"Avatar file not found: {avatar_file}")
-        # Можно добавить fallback на дефолтную картинку
-        return None
+        avatar_filename = f"1_{db_avatar}"
+        avatar_file = os.path.join(IMG_FOLDER, avatar_filename)
+        if not os.path.isfile(avatar_file):
+            return None
     
     profile_message = L10nMessage.get_message(language_code, "profile").format(
         user_name=user_name,
@@ -476,8 +409,6 @@ async def profileMessage(message: Message, state: FSMContext, language_code: str
         photo = await load_image(avatar_file)
         return ProfileData(photo=photo, profile_message=profile_message)
     except Exception as e:
-        print(f"Error loading avatar: {avatar_file}")
-        print(f"Error details: {e}")
         return None
 
 

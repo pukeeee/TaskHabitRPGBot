@@ -71,7 +71,7 @@ async def getHabitListMessage(language_code: str, tg_id):
     habitList = list(await getHabits(tg_id))
     message = Message.get_message(language_code, "habitsList")
     if not habitList:
-        message += "🚽\n"
+        message += "\n\n🚽\n\n"
         
     else:
         message += "\n\n"
