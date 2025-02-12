@@ -27,7 +27,8 @@ from .habit_repository import (
     getHabitById,
     getTodayHabits,
     markHabitAsCompleted,
-    resetHabit
+    resetHabit,
+    checkHabitsCount
 )
 
 
@@ -60,5 +61,6 @@ __all__ = [
     'getHabitById',
     'getTodayHabits',
     'markHabitAsCompleted',
-    'resetHabit'
+    'resetHabit',
+    'checkHabitsCount'
 ] 
