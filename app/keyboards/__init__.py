@@ -14,7 +14,8 @@ from .task_kb import (
     editTasks,
     completeTasksKB,
     completedTasksKB,
-    delCompletedTasks
+    delCompletedTasks,
+    setTaskComplexity
 )
 
 from .habit_kb import (
@@ -55,6 +56,7 @@ __all__ = [
     'completeTasksKB',
     'completedTasksKB',
     'delCompletedTasks',
+    'setTaskComplexity',
     
     # Habit keyboards
     'habitsReplyKB',

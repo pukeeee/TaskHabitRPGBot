@@ -15,7 +15,8 @@ from .task_repository import (
     getTaskById,
     markTaskAsCompleted,
     getUncompletedTask,
-    getCompletedTask
+    getCompletedTask,
+    checkTasksCount
 )
 
 
@@ -51,6 +52,7 @@ __all__ = [
     'markTaskAsCompleted',
     'getUncompletedTask',
     'getCompletedTask',
+    'checkTasksCount',
     
     
     # Habit

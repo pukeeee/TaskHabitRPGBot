@@ -13,7 +13,7 @@ from database.repositories import getUncompletedTask, getCompletedTask
 async def todoReplyKB(language_code: str) -> ReplyKeyboardMarkup:
     taskListButton = Message.get_message(language_code, "taskListButton")
     backToMain = Message.get_message(language_code, "homeButton")
-    statistic = "Statistic"
+    statistic = Message.get_message(language_code, "statisticButton")
     addTaskButton = Message.get_message(language_code, "addTaskButton")
     doneTasksButton = Message.get_message(language_code, "doneTasksButton")
     
@@ -55,7 +55,7 @@ async def taskListKB(language_code: str) -> InlineKeyboardMarkup:
         )
     )
     keyboard.row(InlineKeyboardButton(
-        text="Mark as completed",
+        text = Message.get_message(language_code, "markAsCompleteTaskButton"),
         callback_data="completeTasks"
     ))
     return keyboard.as_markup()
@@ -141,3 +141,27 @@ async def completedTasksKB(language_code: str):
         ]
     )
     return keyboard
+
+
+
+async def setTaskComplexity():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.row(
+        InlineKeyboardButton(
+            text = "🟩",
+            callback_data = "🟩"
+        ),
+        InlineKeyboardButton(
+            text = "🟨",
+            callback_data = "🟨"
+        ),
+        InlineKeyboardButton(
+            text = "🟪",
+            callback_data = "🟪"
+        ),
+        InlineKeyboardButton(
+            text = "🟥",
+            callback_data = "🟥"
+        )
+    )
+    return keyboard.as_markup()

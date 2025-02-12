@@ -14,7 +14,7 @@ async def habitsReplyKB(language_code: str) -> ReplyKeyboardMarkup:
     todayHabits = Message.get_message(language_code, "todayHabitsButton")
     backToMain = Message.get_message(language_code, "homeButton")
     addHabit = Message.get_message(language_code, "addHabitButton")
-    statistic = "Statistic"
+    statistic = Message.get_message(language_code, "statisticButton")
     
     return ReplyKeyboardMarkup(
         keyboard=[
