@@ -6,7 +6,7 @@ from typing import List, Optional
 
 class HabitRepository(BaseRepository):
     async def add_habit(self, tg_id: int, habit_text: str, 
-                       habit_days: str, habit_experience: int) -> None:
+                       habit_days: str, habit_experience: int, complexity: str) -> None:
         async with self.begin():
             user = await self.session.scalar(
                 select(User).where(User.tg_id == tg_id)
@@ -14,11 +14,12 @@ class HabitRepository(BaseRepository):
             if user:
                 unix_time = int(time.time())
                 new_habit = Habit(
-                    name=habit_text,
-                    days_of_week=habit_days,
-                    experience_points=habit_experience,
-                    user=user.id,
-                    created_date=unix_time
+                    name = habit_text,
+                    days_of_week = habit_days,
+                    experience_points = habit_experience,
+                    user = user.id,
+                    created_date = unix_time,
+                    complexity = complexity
                 )
                 self.session.add(new_habit)
 
@@ -33,7 +34,7 @@ class HabitRepository(BaseRepository):
 
 
     async def edit_habit(self, habit_id: int, new_habit_text: str, 
-                        habit_days: str, new_habit_experience: int) -> bool:
+                        habit_days: str, new_habit_experience: int, new_complexity) -> bool:
         async with self.begin():
             habit = await self.session.scalar(
                 select(Habit).where(Habit.id == habit_id)
@@ -42,6 +43,7 @@ class HabitRepository(BaseRepository):
                 habit.name = new_habit_text
                 habit.days_of_week = habit_days
                 habit.experience_points = new_habit_experience
+                habit.complexity = new_complexity
                 return True
             return False
 
@@ -132,9 +134,9 @@ class HabitRepository(BaseRepository):
 
 # Функции-обертки для обратной совместимости
 async def addHabit(tg_id: int, habit_text: str, habit_days: str, 
-                  habit_experience: int) -> None:
+                  habit_experience: int, complexity: str) -> None:
     async with HabitRepository() as repo:
-        await repo.add_habit(tg_id, habit_text, habit_days, habit_experience)
+        await repo.add_habit(tg_id, habit_text, habit_days, habit_experience, complexity)
 
 
 
@@ -145,10 +147,10 @@ async def checkHabitsCount(tg_id: int) -> bool:
 
 
 async def editHabit(habit_id: int, new_habit_text: str, habit_days: str, 
-                   new_habit_experience: int) -> bool:
+                   new_habit_experience: int, complexity: str) -> bool:
     async with HabitRepository() as repo:
         return await repo.edit_habit(habit_id, new_habit_text, habit_days, 
-                                   new_habit_experience)
+                                   new_habit_experience, complexity)
 
 
 

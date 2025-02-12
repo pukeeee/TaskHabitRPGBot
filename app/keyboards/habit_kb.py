@@ -117,6 +117,8 @@ async def selectWeekdaysKB(language_code: str, selected_days=None) -> InlineKeyb
     keyboard.adjust(2)
     return keyboard.as_markup()
 
+
+
 async def todayHabits(tg_id: int, language_code: str) -> InlineKeyboardMarkup:
     currentDay = datetime.today().weekday()
     habits = await getTodayHabits(tg_id)
@@ -142,4 +144,25 @@ async def todayHabits(tg_id: int, language_code: str) -> InlineKeyboardMarkup:
     
     return keyboard.adjust(1).as_markup()
 
-# ... остальные функции для привычек 
+
+async def setHabitComplexity():
+    keyboard = InlineKeyboardBuilder()
+    keyboard.row(
+        InlineKeyboardButton(
+            text = "🟩",
+            callback_data = "🟩"
+        ),
+        InlineKeyboardButton(
+            text = "🟨",
+            callback_data = "🟨"
+        ),
+        InlineKeyboardButton(
+            text = "🟪",
+            callback_data = "🟪"
+        ),
+        InlineKeyboardButton(
+            text = "🟥",
+            callback_data = "🟥"
+        )
+    )
+    return keyboard.as_markup()

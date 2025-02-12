@@ -24,7 +24,8 @@ from .habit_kb import (
     deleteHabits,
     editHabits,
     selectWeekdaysKB,
-    todayHabits
+    todayHabits,
+    setHabitComplexity
 )
 
 from .admin_kb import (
@@ -63,6 +64,7 @@ __all__ = [
     'editHabits',
     'selectWeekdaysKB',
     'todayHabits',
+    'setHabitComplexity',
     
     
     # Admin keyboards

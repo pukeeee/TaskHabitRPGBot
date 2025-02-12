@@ -27,8 +27,9 @@ from app.keyboards import (
     editHabits,
     selectWeekdaysKB,
     todayHabits,
-    startReplyKb
+    startReplyKb, setHabitComplexity
 )
+from .exp_calc import taskExpCalc, habitExpCalc
 
 
 router = Router()
@@ -77,7 +78,7 @@ async def getHabitListMessage(language_code: str, tg_id):
     else:
         message += "\n\n"
         for habit in habitList:
-            message += f"▫️  {habit.name}  |   + {habit.experience_points} ✨\n"
+            message += f"{habit.complexity}  <b>{habit.name}</b>  |   + {habit.experience_points} ✨\n"
         message += "\n"
     message += Message.get_message(language_code, "habitMessage")
     
@@ -137,7 +138,7 @@ async def editHabitText(message: Message, state: FSMContext, language_code: str)
         await message.answer(Message.get_message(language_code, "habitLength"))
         
     else:
-        await state.update_data(new_habit_text = text)
+        await state.update_data(habit_text = text)
         await state.set_state(HabitState.editDays)
         await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await selectWeekdaysKB(language_code))
 
@@ -147,8 +148,6 @@ async def editHabitText(message: Message, state: FSMContext, language_code: str)
 async def editHabitDays(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
-
-
 
 
 
@@ -239,62 +238,101 @@ async def addHabitDays(message: Message, state: FSMContext, language_code: str):
 
 
 
+@router.callback_query(HabitState.setExp)
+async def addHabitExp_callback(callback: CallbackQuery, state: FSMContext, language_code: str):
+    if await habitExceptions(callback.message, state, language_code):
+        return
+    
+    complexity = callback.data
+    await processHabitExp(callback.from_user.id, complexity, state, language_code, callback.message)
+
 @router.message(HabitState.setExp)
-async def addHabitExp(message: Message, state: FSMContext, language_code: str):
+async def addHabitExp_message(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
     
-    try:
-        habit_experience = int(message.text)
-        if not 10 <= habit_experience <= 100:
-            await message.answer("10 - 100")
-            return
-    except ValueError:
-        await message.answer("10 - 100")
+    if message.text in ["🟩", "🟨", "🟪", "🟥"]:
+        complexity = message.text
+        await processHabitExp(message.from_user.id, complexity, state, language_code, message)
+    else:
+        await message.answer("Пожалуйста, выберите сложность из предложенных кнопок.")
+
+
+async def processHabitExp(user_id: int, complexity: str, state: FSMContext, language_code: str, message: Message, is_edit: bool = False):
+    habitData = await saveHabit(complexity, state, language_code)
+    
+    if not habitData.get("habitText") or not habitData.get("habitDays") or not habitData.get("habitExp"):
+        await message.answer("Ошибка: данные привычки не найдены. Пожалуйста, попробуйте снова.")
         return
     
-    habit_data = await state.get_data()
-    habit_text = habit_data.get("habit_text")
-    selected_days = habit_data.get("selected_days", [])
-    habit_days = daysToBinary(selected_days)
+    if is_edit:
+        habit_data = await state.get_data()
+        habitId = habit_data.get("habitId")
+        await editHabit(habitId, habitData["habitText"], habitData["habitDays"], habitData["habitExp"], complexity)
+        await state.clear()
+    else:
+        await addHabit(user_id, habitData["habitText"], habitData["habitDays"], habitData["habitExp"], complexity)
+        await state.clear()
     
-    await addHabit(message.from_user.id, habit_text, habit_days, habit_experience)
-    await message.answer(Message.get_message(language_code, "habitCreated"))
+    await message.answer(Message.get_message(language_code, "habitCreated" if not is_edit else "habitEdited"))
     await state.clear()
-    await state.set_state(HabitState.habitText) 
+    await state.set_state(HabitState.habitText)
 
 
 
-@router.message(HabitState.editExp)
-async def editHabitExp(message: Message, state: FSMContext, language_code: str):
-    if await habitExceptions(message, state, language_code):
+async def saveHabit(complexity, state: FSMContext, language_code: str):
+    habit_data = await state.get_data()
+    habitText = habit_data.get("habit_text")
+    selected_days = habit_data.get("selected_days", [])
+    habitDays = daysToBinary(selected_days)
+    
+    days = len(selected_days)
+    
+    habitExp = await habitExpCalc(complexity, days)
+    
+    return {
+        "habitText": habitText, "habitDays": habitDays, "habitExp": habitExp
+    }
+
+
+
+@router.callback_query(HabitState.editExp)
+async def editHabitExp_callback(callback: CallbackQuery, state: FSMContext, language_code: str):
+    if await habitExceptions(callback.message, state, language_code):
         return
     
-    try:
-        new_habit_experience = int(message.text)
-        if not 10 <= new_habit_experience <= 100:
-            await message.answer("10 - 100")
-            return
-    except ValueError:
-        await message.answer("10 - 100")
+    complexity = callback.data
+    habitData = await saveHabit(complexity, state, language_code)
+    
+    if not habitData:
+        await callback.message.answer("Ошибка: данные привычки не найдены. Пожалуйста, попробуйте снова.")
         return
     
     habit_data = await state.get_data()
     habitId = habit_data.get("habitId")
-    new_habit_text = habit_data.get("new_habit_text")
-    selected_days = habit_data.get("selected_days", [])
-    habit_days = daysToBinary(selected_days)
     
-    await editHabit(habitId, new_habit_text, habit_days, new_habit_experience)
-    habitListMessage = await getHabitListMessage(language_code, message.from_user.id)
-    await message.answer(text = habitListMessage, 
-                                    reply_markup = await habitsList(message.from_user.id, language_code))
+    if not habitId:
+        await callback.message.answer("Ошибка: ID привычки не найден. Пожалуйста, попробуйте снова.")
+        return
+    
+    await editHabit(habitId, habitData["habitText"], habitData["habitDays"], habitData["habitExp"], complexity)
+    habitListMessage = await getHabitListMessage(language_code, callback.from_user.id)
+    await callback.message.edit_text(habitListMessage, reply_markup = await habitsList(callback.from_user.id, language_code))
     await state.clear()
-    await state.set_state(UserState.habits) 
+    await state.set_state(UserState.habits)
 
 
 
-async def saveHabit()
+@router.message(HabitState.editExp)
+async def editHabitExp_message(message: Message, state: FSMContext, language_code: str):
+    if await habitExceptions(message, state, language_code):
+        return
+    
+    if message.text in ["🟩", "🟨", "🟪", "🟥"]:
+        complexity = message.text
+        await processHabitExp(message.from_user.id, complexity, state, language_code, message, is_edit=True)
+    else:
+        await message.answer("Пожалуйста, выберите сложность из предложенных кнопок.")
 
 
 
@@ -333,14 +371,16 @@ async def daysSelection(callback: CallbackQuery, state: FSMContext, language_cod
         
         if current_state == HabitState.choosingDays.state:
             await state.update_data(habit_days = selected_days)
-            await callback.message.edit_text(text = Message.get_message(language_code, "habitDaysSave"))
+            await callback.answer("✅")
+            # await callback.message.edit_text(text = Message.get_message(language_code, "habitDaysSave"))
             await state.set_state(HabitState.setExp)
-            await callback.message.answer(Message.get_message(language_code, "habitExp"))
+            await callback.message.edit_text(Message.get_message(language_code, "habitExp"), reply_markup = await setHabitComplexity())
         elif current_state == HabitState.editDays.state:
             await state.update_data(habit_days = selected_days)
-            await callback.message.edit_text(text = Message.get_message(language_code, "habitDaysSave"))
+            await callback.answer("✅")
+            # await callback.message.edit_text(text = Message.get_message(language_code, "habitDaysSave"))
             await state.set_state(HabitState.editExp)
-            await callback.message.answer(Message.get_message(language_code, "habitExp"))
+            await callback.message.edit_text(Message.get_message(language_code, "habitExp"), reply_markup = await setHabitComplexity())
 
     else:
         day = data.replace("habitDays_", "")
