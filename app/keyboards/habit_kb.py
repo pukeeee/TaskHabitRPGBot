@@ -51,6 +51,8 @@ async def habitsList(tg_id: int, language_code: str) -> InlineKeyboardMarkup:
     )
     return keyboard.as_markup()
 
+
+
 async def deleteHabits(tg_id: int) -> InlineKeyboardMarkup:
     habits = await getHabits(tg_id)
     keyboard = InlineKeyboardBuilder()
@@ -66,6 +68,8 @@ async def deleteHabits(tg_id: int) -> InlineKeyboardMarkup:
         callback_data="backToHabitsList"
     ))
     return keyboard.adjust(1).as_markup()
+
+
 
 async def editHabits(tg_id: int) -> InlineKeyboardMarkup:
     habits = await getHabits(tg_id)

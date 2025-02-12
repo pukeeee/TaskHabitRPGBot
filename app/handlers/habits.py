@@ -15,7 +15,8 @@ from database.repositories import (
     getTodayHabits,
     markHabitAsCompleted,
     resetHabit,
-    getUserDB
+    getUserDB,
+    checkHabitsCount
 )
 from app.fsm import UserState, HabitState, TaskState, UserRPG
 from app.keyboards import (
@@ -149,32 +150,7 @@ async def editHabitDays(message: Message, state: FSMContext, language_code: str)
 
 
 
-@router.message(HabitState.editExp)
-async def editHabitExp(message: Message, state: FSMContext, language_code: str):
-    if await habitExceptions(message, state, language_code):
-        return
-    
-    try:
-        new_habit_experience = int(message.text)
-        if not 10 <= new_habit_experience <= 100:
-            await message.answer("10 - 100")
-            return
-    except ValueError:
-        await message.answer("10 - 100")
-        return
-    
-    habit_data = await state.get_data()
-    habitId = habit_data.get("habitId")
-    new_habit_text = habit_data.get("new_habit_text")
-    selected_days = habit_data.get("selected_days", [])
-    habit_days = daysToBinary(selected_days)
-    
-    await editHabit(habitId, new_habit_text, habit_days, new_habit_experience)
-    habitListMessage = await getHabitListMessage(language_code, message.from_user.id)
-    await message.answer(text = habitListMessage, 
-                                    reply_markup = await habitsList(message.from_user.id, language_code))
-    await state.clear()
-    await state.set_state(UserState.habits) 
+
 
 
 
@@ -236,12 +212,23 @@ async def addHabit_handler(message: Message, state: FSMContext, language_code: s
         return
     
     text = message.text.strip()
-    if len(text) > 100:
-        await message.answer(Message.get_message(language_code, "habitLength"))
+
+    limit = await checkHabitsCount(message.from_user.id)
+    
+    if limit is None:
+        await message.answer("Произошла ошибка при проверке лимита привычек. Пожалуйста, попробуйте позже.")
+        return
+    
+    if limit == False:
+        await message.answer(Message.get_message(language_code, "habitLimitReached"))
+        
     else:
-        await state.update_data(habit_text = text)
-        await state.set_state(HabitState.choosingDays)
-        await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await selectWeekdaysKB(language_code))
+        if len(text) > 100:
+            await message.answer(Message.get_message(language_code, "habitLength"))
+        else:
+            await state.update_data(habit_text = text)
+            await state.set_state(HabitState.choosingDays)
+            await message.answer(Message.get_message(language_code, "habitDays"), reply_markup = await selectWeekdaysKB(language_code))
 
 
 
@@ -275,6 +262,39 @@ async def addHabitExp(message: Message, state: FSMContext, language_code: str):
     await message.answer(Message.get_message(language_code, "habitCreated"))
     await state.clear()
     await state.set_state(HabitState.habitText) 
+
+
+
+@router.message(HabitState.editExp)
+async def editHabitExp(message: Message, state: FSMContext, language_code: str):
+    if await habitExceptions(message, state, language_code):
+        return
+    
+    try:
+        new_habit_experience = int(message.text)
+        if not 10 <= new_habit_experience <= 100:
+            await message.answer("10 - 100")
+            return
+    except ValueError:
+        await message.answer("10 - 100")
+        return
+    
+    habit_data = await state.get_data()
+    habitId = habit_data.get("habitId")
+    new_habit_text = habit_data.get("new_habit_text")
+    selected_days = habit_data.get("selected_days", [])
+    habit_days = daysToBinary(selected_days)
+    
+    await editHabit(habitId, new_habit_text, habit_days, new_habit_experience)
+    habitListMessage = await getHabitListMessage(language_code, message.from_user.id)
+    await message.answer(text = habitListMessage, 
+                                    reply_markup = await habitsList(message.from_user.id, language_code))
+    await state.clear()
+    await state.set_state(UserState.habits) 
+
+
+
+async def saveHabit()
 
 
 

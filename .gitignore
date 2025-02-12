@@ -22,3 +22,4 @@ app/keyboards/admin_kb.py
 app/keyboards/profiles_kb.py
 app/keyboards/subscription_kb.py
 database/repositories/profile_repository.py
+app/handlers/exp_calc.py
