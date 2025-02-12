@@ -18,7 +18,7 @@ class TaskRepository(BaseRepository):
                 )
                 return result.all()
             return []
-
+    
 
 
     async def get_completed_tasks(self, tg_id: int) -> List[Task]:
@@ -37,24 +37,24 @@ class TaskRepository(BaseRepository):
 
 
 
-    async def add_task(self, tg_id: int, text: str) -> bool:
+    async def add_task(self, tg_id: int, text: str, taskExp: int, complexity: str) -> bool:
         async with self.begin():
             user = await self.session.scalar(
                 select(User).where(User.tg_id == tg_id)
             )
             if user:
-                tasks_count = await self.session.scalar(
-                    select(func.count(Task.id)).where(
-                        and_(Task.user == user.id, Task.status == False)
-                    )
-                )
-                if tasks_count >= 10:
-                    return False
-                
-                self.session.add(Task(task=text, user=user.id))
+                self.session.add(Task(task=text, user=user.id, complexity = complexity, experience_points = taskExp))
                 return True
             return False
 
+    
+    
+    async def check_tasks_count(self, tg_id: int) -> bool:
+        user = await self.session.scalar(select(User).where(User.tg_id == tg_id))
+        tasks_count = await self.session.scalar(select(func.count(Task.id)).where(Task.user == user.id))
+
+        return False if tasks_count >= 10 else True
+    
 
 
     async def delete_task(self, task_id: int) -> None:
@@ -65,13 +65,23 @@ class TaskRepository(BaseRepository):
 
 
 
-    async def edit_task(self, task_id: int, new_text: str) -> None:
+    async def edit_task(self, task_id: int, new_text: str, taskExp: int, complexity: str) -> None:
+        # async with self.begin():
+        #     await self.session.execute(
+        #         update(Task)
+        #         .where(Task.id == task_id)
+        #         .values(task=new_text)
+        #     )
         async with self.begin():
-            await self.session.execute(
-                update(Task)
-                .where(Task.id == task_id)
-                .values(task=new_text)
+            task = await self.session.scalar(
+                select(Task).where(Task.id == task_id)
             )
+            if task:
+                task.name = new_text
+                task.experience_points = taskExp
+                task.complexity = complexity
+                return True
+            return False
 
 
 
@@ -99,6 +109,7 @@ class TaskRepository(BaseRepository):
 
             unix_time = int(time.time())
             user.all_tasks_count += 1
+            user.experience += task.experience_points
             task.status = True
             task.done_date = unix_time
 
@@ -137,17 +148,22 @@ async def getCompletedTask(tg_id: int) -> List[Task]:
     async with TaskRepository() as repo:
         return await repo.get_completed_tasks(tg_id)
 
-async def addTask(tg_id: int, text: str) -> bool:
+async def addTask(tg_id: int, text: str, complexity: str, taskExp: int) -> bool:
     async with TaskRepository() as repo:
-        return await repo.add_task(tg_id, text)
+        return await repo.add_task(tg_id, text, complexity, taskExp)
+
+async def checkTasksCount(tg_id: int) -> bool:
+    async with TaskRepository() as repo:
+        return await repo.check_tasks_count(tg_id)
+
 
 async def deleteTask(task_id: int) -> None:
     async with TaskRepository() as repo:
         await repo.delete_task(task_id)
 
-async def editTaskInDB(task_id: int, new_text: str) -> None:
+async def editTaskInDB(task_id: int, new_text: str, taskExp: int, complexity: str) -> None:
     async with TaskRepository() as repo:
-        await repo.edit_task(task_id, new_text)
+        await repo.edit_task(task_id, new_text, taskExp, complexity)
 
 async def getTaskById(task_id: int) -> Optional[str]:
     async with TaskRepository() as repo:

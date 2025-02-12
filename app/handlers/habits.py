@@ -51,7 +51,7 @@ async def habit_handler(message: Message, state: FSMContext, language_code: str)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         return
     
-    elif message.text == "Statistic":
+    elif message.text == Message.get_message(language_code, "statisticButton"):
         stat = await getUserDB(message.from_user.id)
         
         start_date = datetime.fromtimestamp(stat.start_date, tz=timezone.utc)
@@ -188,7 +188,7 @@ async def habitExceptions(message: Message, state: FSMContext, language_code: st
         await state.set_state(UserState.habits)
         return True
     
-    elif message.text == "Statistic":
+    elif message.text == Message.get_message(language_code, "statisticButton"):
         await message.answer("Not available now", parse_mode=ParseMode.HTML)
         await state.clear()
         await state.set_state(UserState.habits)
