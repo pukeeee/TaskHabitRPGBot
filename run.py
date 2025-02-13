@@ -15,7 +15,7 @@ from app.handlers import (
     admin_router,
     subscription_router
 )
-from config import TOKEN
+from app.core.utils.config import TOKEN
 
 
 async def main():

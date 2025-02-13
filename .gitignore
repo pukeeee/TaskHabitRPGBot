@@ -23,3 +23,5 @@ app/keyboards/profiles_kb.py
 app/keyboards/subscription_kb.py
 database/repositories/profile_repository.py
 app/handlers/exp_calc.py
+app/core/utils/name_validation.py
+app/core/utils/exp_calc.py

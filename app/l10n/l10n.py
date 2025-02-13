@@ -1,7 +1,7 @@
 from fluent.runtime import FluentLocalization, FluentResourceLoader
 import os
 
-LOCALES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'l10n')
+LOCALES_DIR = os.path.dirname(os.path.abspath(__file__))
 SUPPORTED_LOCALES = ['en', 'ru', 'uk']
 DEFAULT_LOCALE = 'en'
 

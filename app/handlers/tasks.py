@@ -3,17 +3,16 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
-import random
-import os
-from app.l10n import Message
+from app.l10n.l10n import Message
 from database.repositories import (addTask, deleteTask, editTaskInDB, getTaskById,
     markTaskAsCompleted, getUncompletedTask, getCompletedTask, getUserDB, checkTasksCount
 )
-from app.fsm import UserState, TaskState
+from app.states import User, Task
 from app.keyboards import (startReplyKb, todoReplyKB, taskListKB, addTaskReplyKB,
     editTasks, delTasks, completeTasksKB, completedTasksKB, delCompletedTasks, setTaskComplexity
 )
-from .exp_calc import taskExpCalc
+from app.core.utils.exp_calc import taskExpCalc
+
 
 
 router = Router()
@@ -21,13 +20,13 @@ router.name = 'tasks'
 
 
 
-@router.message(UserState.todo)
+@router.message(User.todo)
 async def todo_handler(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "taskListButton"):
         await taskList(message, language_code)
         
     elif message.text == Message.get_message(language_code, "homeButton"):
-        await state.set_state(UserState.startMenu)
+        await state.set_state(User.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         
     elif message.text == Message.get_message(language_code, "statisticButton"):
@@ -43,7 +42,7 @@ async def todo_handler(message: Message, state: FSMContext, language_code: str):
                                                                                     all_tasks_count = all_tasks_count))
         
     elif message.text == Message.get_message(language_code, "addTaskButton"):
-        await state.set_state(TaskState.addTask)
+        await state.set_state(Task.addTask)
         await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
                             reply_markup = await addTaskReplyKB(language_code))
         
@@ -67,7 +66,8 @@ async def getUncompletedTasks(language_code: str, tg_id):
     else:
         message += "\n\n"
         for task in taskList:
-            message += f"{task.complexity}  <b>{task.task}</b>  |   + {task.experience_points} ✨\n"
+            taskExp = f"{task.experience_points}✨"
+            message += f"<code>{task.complexity:<2} + {taskExp:<5}</code> |   <b>{task.task}</b>\n"
         message += "\n"
     message += Message.get_message(language_code, "taskListMessage")
     return message
@@ -114,14 +114,14 @@ async def completeTasks(callback: CallbackQuery, language_code: str):
 
 
 
-@router.message(TaskState.addTask)
+@router.message(Task.addTask)
 async def addTask_handler(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "homeButton"):
-        await state.set_state(UserState.startMenu)
+        await state.set_state(User.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
 
     elif message.text == Message.get_message(language_code, "backToTaskButton"):
-        await state.set_state(UserState.todo)
+        await state.set_state(User.todo)
         await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, 
                             reply_markup = await todoReplyKB(language_code))
     
@@ -140,17 +140,11 @@ async def addTask_handler(message: Message, state: FSMContext, language_code: st
             else:
                 await message.answer(Message.get_message(language_code, "taskExp"), reply_markup = await setTaskComplexity())
                 await state.update_data(task_text = text)
-                await state.set_state(TaskState.setExp)
-            
-            # newTask = await addTask(message.from_user.id, message.text)
-            # if newTask == False:
-            #     await message.answer(Message.get_message(language_code, "taskLimitReached"))
-            # else:
-            #     await message.answer(Message.get_message(language_code, "addTask"))
+                await state.set_state(Task.setExp)
 
 
 
-@router.callback_query(TaskState.setExp)
+@router.callback_query(Task.setExp)
 async def setTaskExpHandler(callback: CallbackQuery, state: FSMContext, language_code: str):
     complexity = callback.data
     
@@ -158,7 +152,7 @@ async def setTaskExpHandler(callback: CallbackQuery, state: FSMContext, language
     
     await addTask(callback.from_user.id, taskData["taskText"], taskData["taskExp"], complexity)
     await state.clear()
-    await state.set_state(TaskState.addTask)
+    await state.set_state(Task.addTask)
     await callback.message.answer(Message.get_message(language_code, "addTask"))
     await callback.answer("✅")
     
@@ -174,14 +168,14 @@ async def saveTask(complexity, state: FSMContext, language_code: str):
 
 
 
-@router.message(TaskState.setExp)
+@router.message(Task.setExp)
 async def setExpExceptions(message: Message, state: FSMContext, language_code: str):
     if message.text == Message.get_message(language_code, "homeButton"):
-        await state.set_state(UserState.startMenu)
+        await state.set_state(User.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
 
     elif message.text == Message.get_message(language_code, "backToTaskButton"):
-        await state.set_state(UserState.todo)
+        await state.set_state(User.todo)
         await message.answer(Message.get_message(language_code, "todoStart"), parse_mode=ParseMode.HTML, 
                             reply_markup = await todoReplyKB(language_code))
 
@@ -209,7 +203,7 @@ async def edit_task(callback: CallbackQuery, state: FSMContext, language_code: s
     await callback.answer("✅")
     taskId = callback.data.split("_")[1]
     task = await getTaskById(taskId)
-    await state.set_state(TaskState.taskEdit)
+    await state.set_state(Task.taskEdit)
     await state.update_data(taskId = taskId)
     await callback.message.edit_text(text = f"Current text: {task}\n\nPlease enter new text for your task:")
 
@@ -235,11 +229,11 @@ async def backToTaskList_handler(callback: CallbackQuery, state: FSMContext, lan
 async def todo_exception(message, state, language_code):
     if message.text == Message.get_message(language_code, "taskListButton"):
         await taskList(message, language_code)
-        await state.set_state(UserState.todo)
+        await state.set_state(User.todo)
         return True
     
     elif message.text == Message.get_message(language_code, "homeButton"):
-        await state.set_state(UserState.startMenu)
+        await state.set_state(User.startMenu)
         await message.answer(Message.get_message(language_code, "homePage"), reply_markup = await startReplyKb(language_code))
         return True
     
@@ -256,7 +250,7 @@ async def todo_exception(message, state, language_code):
                                                                                     all_tasks_count = all_tasks_count))
         
     elif message.text == Message.get_message(language_code, "addTaskButton"):
-        await state.set_state(TaskState.addTask)
+        await state.set_state(Task.addTask)
         await message.answer(Message.get_message(language_code, "createTask"), parse_mode=ParseMode.HTML,
                             reply_markup = await addTaskReplyKB(language_code))
         
@@ -268,7 +262,7 @@ async def todo_exception(message, state, language_code):
 
 
 
-@router.message(TaskState.taskEdit)
+@router.message(Task.taskEdit)
 async def editTask(message: Message, state: FSMContext, language_code: str):
     if await todo_exception(message, state, language_code):
         return
@@ -280,24 +274,18 @@ async def editTask(message: Message, state: FSMContext, language_code: str):
     else:
         await message.answer(Message.get_message(language_code, "taskExp"), reply_markup = await setTaskComplexity())
         await state.update_data(task_text = text)
-        await state.set_state(TaskState.editExp)
-        # data = await state.get_data()
-        # taskId = data['taskId']
-        # await editTaskInDB(taskId, text)
-        # await state.set_state(UserState.todo)
-
-        # taskListMessage = await getUncompletedTasks(language_code, message.from_user.id)
-        # await message.answer(taskListMessage, reply_markup = await taskListKB(language_code))
+        await state.set_state(Task.editExp)
 
 
 
-@router.message(TaskState.editExp)
+@router.message(Task.editExp)
 async def _(message: Message, state: FSMContext, language_code: str):
     if await todo_exception(message, state, language_code):
         return
 
 
-@router.callback_query(TaskState.editExp)
+
+@router.callback_query(Task.editExp)
 async def editTaskExpHandler(callback: CallbackQuery, state: FSMContext, language_code: str):
     complexity = callback.data
     
@@ -305,7 +293,7 @@ async def editTaskExpHandler(callback: CallbackQuery, state: FSMContext, languag
     data = await state.get_data()
     await editTaskInDB(data["taskId"], taskData["taskText"], taskData["taskExp"], complexity)
     await state.clear()
-    await state.set_state(UserState.todo)
+    await state.set_state(User.todo)
     taskListMessage = await getUncompletedTasks(language_code, callback.from_user.id)
     await callback.message.edit_text(taskListMessage, reply_markup = await taskListKB(language_code))
 

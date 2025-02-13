@@ -6,7 +6,7 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 import random
 import os
-from app.l10n import Message as L10nMessage
+from app.l10n.l10n import Message as L10nMessage
 from app.handlers.profiles import profileMessage
 from database.repositories import (
     setUser,
@@ -22,14 +22,14 @@ from database.repositories import (
     saveUserCharacter,
     getLeaderboard
 )
-from app.fsm import UserState, HabitState, TaskState, UserRPG
+from app.states import User
 from app.keyboards import (
     startReplyKb,
     todoReplyKB,
     profileInLineKB,
     habitsReplyKB
 )
-from config import IMG_FOLDER
+from app.core.utils.config import IMG_FOLDER
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
@@ -39,15 +39,15 @@ router.name = 'main'
 
 
 
-@router.message(UserState.startMenu)
+@router.message(User.startMenu)
 async def main_process(message: Message, state: FSMContext, language_code: str):
     if message.text == L10nMessage.get_message(language_code, "habitTrackerButton"):
-        await state.set_state(UserState.habits)
+        await state.set_state(User.habits)
         await message.answer(L10nMessage.get_message(language_code, "habitStart"), 
                            reply_markup=await habitsReplyKB(language_code))
 
     elif message.text == L10nMessage.get_message(language_code, "taskTrackerButton"):
-        await state.set_state(UserState.todo)
+        await state.set_state(User.todo)
         await message.answer(L10nMessage.get_message(language_code, "todoStart"), 
                            reply_markup=await todoReplyKB(language_code))
 
