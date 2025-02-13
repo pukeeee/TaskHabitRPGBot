@@ -77,7 +77,7 @@ class TaskRepository(BaseRepository):
                 select(Task).where(Task.id == task_id)
             )
             if task:
-                task.name = new_text
+                task.task = new_text
                 task.experience_points = taskExp
                 task.complexity = complexity
                 return True

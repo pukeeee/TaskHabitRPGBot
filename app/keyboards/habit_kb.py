@@ -5,7 +5,7 @@ from aiogram.types import (
     InlineKeyboardButton
 )
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
-from app.l10n import Message
+from app.l10n.l10n import Message
 from database.repositories import getHabits, getTodayHabits
 from datetime import datetime
 

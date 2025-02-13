@@ -5,10 +5,10 @@ from aiogram.types import (
     InlineKeyboardButton
 )
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
-from app.l10n import Message
+from app.l10n.l10n import Message
 import os
 import html
-from config import IMG_FOLDER
+from app.core.utils.config import IMG_FOLDER
 
 
 
@@ -82,7 +82,9 @@ async def profileSettngsKB(language_code: str):
         InlineKeyboardButton(
             text = Message.get_message(language_code, "changeNameButton"),
             callback_data="changeName"
-        ),
+        )
+    )
+    keyboard.row(
         InlineKeyboardButton(
             text = Message.get_message(language_code, "changeAvatarButton"),
             callback_data="changeAvatar"
