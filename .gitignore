@@ -25,3 +25,10 @@ database/repositories/profile_repository.py
 app/handlers/exp_calc.py
 app/core/utils/name_validation.py
 app/core/utils/exp_calc.py
+app/keyboards/admin/subscription_kb.py
+app/keyboards/admin/admin_kb.py
+app/keyboards/user/profile_kb.py
+app/handlers/user/profiles.py
+app/handlers/commands/commands.py
+app/handlers/admin/subscription.py
+app/handlers/admin/admin.py
