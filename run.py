@@ -6,15 +6,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis 
 from app.core.middlewares import LanguageMiddleware, RateLimitMiddleware, SubscriptionMiddleware
 from database.models import async_main
-from app.handlers import (
-    main_router,
-    profile_router,
-    task_router,
-    habit_router,
-    commands_router,
-    admin_router,
-    subscription_router
-)
+from app.handlers import __all__ as all_routers
 from app.core.utils.config import TOKEN
 
 
@@ -39,15 +31,7 @@ async def main():
     dp.callback_query.middleware(SubscriptionMiddleware())
     
     # Подключаем все роутеры
-    dp.include_routers(
-        commands_router,
-        main_router,
-        profile_router,
-        task_router,
-        habit_router,
-        admin_router,
-        subscription_router
-    )
+    dp.include_routers(*all_routers)
 
     await dp.start_polling(bot)
 

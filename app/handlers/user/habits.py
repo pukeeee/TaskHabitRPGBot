@@ -14,7 +14,6 @@ from database.repositories import (
     getHabitById,
     getTodayHabits,
     markHabitAsCompleted,
-    resetHabit,
     getUserDB,
     checkHabitsCount
 )

@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 import random
 import os
 from app.l10n.l10n import Message as L10nMessage
-from app.handlers.profiles import profileMessage
+from app.handlers.user.profiles import profileMessage
 from database.repositories import (
     setUser,
     deleteTask,
