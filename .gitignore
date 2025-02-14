@@ -11,9 +11,7 @@ app/core/middlewares/l10n_middleware.py
 app/core/middlewares/rate_limit_middleware.py
 app/core/middlewares/subscription_middleware.py
 .DS_Store
-app/l10n/en.ftl
-app/l10n/ru.ftl
-app/l10n/uk.ftl
+app/l10n
 app/handlers/subscription.py
 app/handlers/admin.py
 app/handlers/commands.py
@@ -32,3 +30,4 @@ app/handlers/user/profiles.py
 app/handlers/commands/commands.py
 app/handlers/admin/subscription.py
 app/handlers/admin/admin.py
+app/scheduler

@@ -4,6 +4,8 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.redis import RedisStorage
 from redis.asyncio import Redis 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from app.scheduler import schedulerResetHabits, schedulerIncompletedHabits, schedulerTodayActivity
 from app.core.middlewares import LanguageMiddleware, RateLimitMiddleware, SubscriptionMiddleware
 from database.models import async_main
 from app.handlers import __all__ as all_routers
@@ -32,6 +34,12 @@ async def main():
     
     # Подключаем все роутеры
     dp.include_routers(*all_routers)
+    
+    scheduler = AsyncIOScheduler()
+    schedulerIncompletedHabits(scheduler, bot)
+    schedulerTodayActivity(scheduler, bot)
+    schedulerResetHabits(scheduler)
+    scheduler.start()  # Запускаем планировщик
 
     await dp.start_polling(bot)
 

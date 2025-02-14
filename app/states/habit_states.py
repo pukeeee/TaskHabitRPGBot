@@ -5,6 +5,6 @@ class Habit(StatesGroup):
     habitText = State()
     choosingDays = State()
     setExp = State()
-    edithabitText = State()
+    editHabitText = State()
     editDays = State()
     editExp = State()

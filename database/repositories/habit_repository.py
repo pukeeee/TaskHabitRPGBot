@@ -2,7 +2,9 @@ from database.repository import BaseRepository
 from database.models import User, Habit, Statistic
 from sqlalchemy import select, update, delete, and_, func
 import time
-from typing import List, Optional
+from typing import List, Optional, Dict
+from sqlalchemy.orm import joinedload
+
 
 class HabitRepository(BaseRepository):
     async def add_habit(self, tg_id: int, habit_text: str, 
@@ -47,6 +49,8 @@ class HabitRepository(BaseRepository):
                 return True
             return False
 
+
+
     async def get_habits(self, tg_id: int) -> List[Habit]:
         async with self.begin():
             user = await self.session.scalar(
@@ -59,11 +63,15 @@ class HabitRepository(BaseRepository):
                 return result.all()
             return []
 
+
+
     async def get_habit_by_id(self, habit_id: int) -> Optional[str]:
         async with self.begin():
             return await self.session.scalar(
                 select(Habit.name).where(Habit.id == habit_id)
             )
+
+
 
     async def get_today_habits(self, tg_id: int) -> List[Habit]:
         async with self.begin():
@@ -79,11 +87,15 @@ class HabitRepository(BaseRepository):
                 return result.all()
             return []
 
+
+
     async def delete_habit(self, habit_id: int) -> None:
         async with self.begin():
             await self.session.execute(
                 delete(Habit).where(Habit.id == habit_id)
             )
+
+
 
     async def mark_completed(self, habit_id: int, tg_id: int) -> None:
         async with self.begin():
@@ -123,16 +135,31 @@ class HabitRepository(BaseRepository):
                 )
                 self.session.add(new_statistic)
 
-    async def reset_habits(self) -> None:
+
+
+    async def reset_habits(self) -> tuple[int, int]:
         async with self.begin():
+            habitsCountQuery = select(func.count()).where(Habit.status == True)
+            habitsCount = await self.session.scalar(habitsCountQuery)
+            
+            userCountQuery = select(func.count(func.distinct(Habit.user))).where(Habit.status == True)
+            usersCount = await self.session.scalar(userCountQuery)
+            
             await self.session.execute(
                 update(Habit)
                 .where(Habit.status == True)
-                .values(status=False)
+                .values(status = False)
             )
+            
+            return habitsCount, usersCount
 
 
-# Функции-обертки для обратной совместимости
+
+################################################
+"""Функции-обертки для обратной совместимости"""
+################################################
+
+
 async def addHabit(tg_id: int, habit_text: str, habit_days: str, 
                   habit_experience: int, complexity: str) -> None:
     async with HabitRepository() as repo:
@@ -164,18 +191,26 @@ async def getHabitById(habit_id: int) -> Optional[str]:
     async with HabitRepository() as repo:
         return await repo.get_habit_by_id(habit_id)
 
+
+
 async def getTodayHabits(tg_id: int) -> List[Habit]:
     async with HabitRepository() as repo:
         return await repo.get_today_habits(tg_id)
+
+
 
 async def deleteHabit(habit_id: int) -> None:
     async with HabitRepository() as repo:
         await repo.delete_habit(habit_id)
 
+
+
 async def markHabitAsCompleted(habit_id: int, tg_id: int) -> None:
     async with HabitRepository() as repo:
         await repo.mark_completed(habit_id, tg_id)
 
-async def resetHabit() -> None:
+
+
+async def resetHabit() -> tuple:
     async with HabitRepository() as repo:
-        await repo.reset_habits() 
+        return await repo.reset_habits()
