@@ -123,12 +123,12 @@ async def edit_habit(callback: CallbackQuery, language_code: str, state: FSMCont
     habitId = callback.data.split("_")[1]
     await getHabitById(habitId)
     await state.update_data(habitId = habitId)
-    await state.set_state(Habit.edithabitText)
+    await state.set_state(Habit.editHabitText)
     await callback.message.edit_text(text = Message.get_message(language_code, "habitEditText"))
 
 
 
-@router.message(Habit.edithabitText)
+@router.message(Habit.editHabitText)
 async def editHabitText(message: Message, state: FSMContext, language_code: str):
     if await habitExceptions(message, state, language_code):
         return
@@ -245,6 +245,8 @@ async def addHabitExp_callback(callback: CallbackQuery, state: FSMContext, langu
     
     complexity = callback.data
     await processHabitExp(callback.from_user.id, complexity, state, language_code, callback.message)
+
+
 
 @router.message(Habit.setExp)
 async def addHabitExp_message(message: Message, state: FSMContext, language_code: str):
