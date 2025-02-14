@@ -1,32 +1,15 @@
-from aiogram import Router, F, types
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from aiogram.types.input_file import FSInputFile
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
 from aiogram.enums.parse_mode import ParseMode
-from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timezone
 from app.l10n.l10n import Message
-from database.repositories import (
-    addHabit,
-    editHabit,
-    deleteHabit,
-    getHabits,
-    getHabitById,
-    getTodayHabits,
-    markHabitAsCompleted,
-    getUserDB,
-    checkHabitsCount
+from database.repositories import (addHabit, editHabit, deleteHabit, getHabits,
+    getHabitById, markHabitAsCompleted, getUserDB, checkHabitsCount
 )
 from app.states import User, Habit
-from app.keyboards import (
-    habitsReplyKB,
-    addHabitReplyKB,
-    habitsList,
-    deleteHabits,
-    editHabits,
-    selectWeekdaysKB,
-    todayHabits,
-    startReplyKb, setHabitComplexity
+from app.keyboards import (habitsReplyKB, addHabitReplyKB, habitsList, deleteHabits,
+    editHabits, selectWeekdaysKB,todayHabits, startReplyKb, setHabitComplexity
 )
 from app.core.utils.exp_calc import habitExpCalc
 

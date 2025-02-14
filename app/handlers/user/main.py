@@ -1,35 +1,12 @@
 from aiogram import Router, F, types
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from aiogram.types.input_file import FSInputFile
+from aiogram.types import Message
 from aiogram.enums.parse_mode import ParseMode
-from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.fsm.context import FSMContext
-import random
-import os
 from app.l10n.l10n import Message as L10nMessage
 from app.handlers.user.profiles import profileMessage
-from database.repositories import (
-    setUser,
-    deleteTask,
-    addTask,
-    getUserDB,
-    addHabit,
-    deleteHabit,
-    getTaskById,
-    editTaskInDB,
-    markHabitAsCompleted,
-    changeNameDB,
-    saveUserCharacter,
-    getLeaderboard
-)
 from app.states import User
-from app.keyboards import (
-    startReplyKb,
-    todoReplyKB,
-    profileInLineKB,
-    habitsReplyKB
-)
-from app.core.utils.config import IMG_FOLDER
+from app.keyboards import todoReplyKB, profileInLineKB, habitsReplyKB
+
 
 # import logging
 # logging.basicConfig(level=logging.INFO)

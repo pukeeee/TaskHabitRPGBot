@@ -1,13 +1,9 @@
-from aiogram.types import (
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
-)
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.l10n.l10n import Message
 from database.repositories import getHabits, getTodayHabits
 from datetime import datetime
+
 
 async def habitsReplyKB(language_code: str) -> ReplyKeyboardMarkup:
     habitListButton = Message.get_message(language_code, "habitListButton")
@@ -25,6 +21,8 @@ async def habitsReplyKB(language_code: str) -> ReplyKeyboardMarkup:
         resize_keyboard=True
     )
 
+
+
 async def addHabitReplyKB(language_code: str) -> ReplyKeyboardMarkup:
     backToMain = Message.get_message(language_code, "homeButton")
     backToHabit = Message.get_message(language_code, "backToHabitButton")
@@ -36,6 +34,8 @@ async def addHabitReplyKB(language_code: str) -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True
     )
+
+
 
 async def habitsList(tg_id: int, language_code: str) -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardBuilder()
@@ -86,6 +86,8 @@ async def editHabits(tg_id: int) -> InlineKeyboardMarkup:
         callback_data="backToHabitsList"
     ))
     return keyboard.adjust(1).as_markup()
+
+
 
 async def selectWeekdaysKB(language_code: str, selected_days=None) -> InlineKeyboardMarkup:
     if selected_days is None:
