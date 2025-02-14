@@ -55,12 +55,12 @@ async def check_subscription(callback: CallbackQuery, state: FSMContext, languag
     except TelegramBadRequest as e:
         print(f"Telegram error in subscription check: {e}")
         await callback.answer(
-            "Ошибка при проверке подписки. Убедитесь, что вы подписаны на канал",
+            L10nMessage.get_message(language_code, "subscription"),
             show_alert=True
         )
     except Exception as e:
         print(f"Error in subscription check: {e}")
         await callback.answer(
-            "Произошла ошибка при проверке подписки",
+            L10nMessage.get_message(language_code, "subscription"),
             show_alert=True
         )
